@@ -1,0 +1,118 @@
+/**
+ * FILEPATH: /c:/Users/james.woodward/Desktop/floorplanv2 1.10b/src/Styles/header.css
+ * 
+ * This file contains the styles for the header bar of a web page.
+ */
+
+/* Style for the header bar container */
+#header-bar {
+  background-color: rgba(128, 128, 128, 0.5);
+  backdrop-filter: blur(5px); /* Apply a blur effect to the layers below */
+  top: 0;
+  width: 100%;
+  z-index: 500; /* Ensure it is above other content */
+  justify-content: center; /* Center the content horizontally */
+  padding: 10px;
+  align-items: center; /* Center the content vertically */
+  height: 40px;
+  flex-direction: row; /* Align the buttons horizontally */
+}
+
+/* Style for the header bar logo */
+#header-bar img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Style for hiding an element */
+.hidden {
+  display: none;
+}
+
+/* Style for the minimize button */
+#header-minimise-btn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 999;
+  background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent button background */
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+}
+
+/* Style for the minimize button icon */
+#header-minimise-btn img {
+  width: 100%;
+  height: 100%;
+}
+
+/* Style for hiding the header bar */
+.header-bar-hidden {
+  display: none;
+}
+
+/* Style for showing the header bar */
+.header-bar-visible {
+  display: flex;
+}
+
+/* Style for header buttons */
+#header-bar button {
+  background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent button background */
+  color: white;
+  border: 1px solid rgb(148, 148, 148); /* Add stroke in dark grey around text */
+  padding: 10px 20px;
+  margin: 0 10px; /* Add some margin for spacing */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add drop shadow */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Add drop shadow to text */
+}
+
+/* Style for header button on hover */
+#header-bar button:hover {
+  background-color: rgba(255, 255, 255, 0.4); /* Change background on hover */
+}
+
+/* Style for active (highlighted) button */
+#header-bar button.active {
+  background-color: rgba(255, 255, 255, 0.6); /* Different background for active state */
+  color: #333; /* Optional: change text color for active state */
+}
+
+/* Optional: Specific styles for icons inside buttons */
+#header-bar button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px; /* Add some space between icon and text */
+  vertical-align: middle; /* Center the icon with the text */
+}
+
+/* Style for the open settings button */
+#open-settings-btn {
+  position: fixed;
+  z-index: 510;
+  top: 10px;
+  right: 20px;
+  background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent button background */
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex; /* Use flexbox to center the content */
+  justify-content: center; /* Center content horizontally */
+  align-items: center; /* Center content vertically */
+}
+
+/* Style for the open settings button icon */
+#open-settings-btn-img.button-image {
+  width: 20px;
+  height: 20px;
+}
+
+

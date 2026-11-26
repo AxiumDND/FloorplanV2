@@ -1,0 +1,56 @@
+/* Ensure the html and body take up the full height */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /*overflow: hidden;*/
+  font-family: Arial, sans-serif;
+}
+
+/* Container for the main content of the application */
+#main-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Floor panes container */
+#floor-panes-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Individual floor pane */
+.floor-pane {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: none;
+  overflow: auto; /* Optional: ensures content can scroll if it overflows */
+}
+
+/* Show the first floor pane by default */
+.floor-pane:first-child {
+  display: block;
+}
+
+/* Floor pane visibility classes */
+.floor-pane-hidden {
+  display: none;
+}
+
+.floor-pane-reveal {
+  display: block;
+}
+
+/* Make sure the hidden class works across all elements */
+.hidden {
+  display: none;
+}
+
+
+.light.locked {
+  cursor: not-allowed; /* Indicate that the light is locked and cannot be moved */
+  pointer-events: none; /* Prevent any interaction with the element */
+}

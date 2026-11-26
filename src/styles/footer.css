@@ -1,0 +1,74 @@
+/**
+ * Styles for the footer bar.
+ */
+
+/* Select the footer bar element */
+#footer-bar {
+  position: fixed; /* Position the footer bar as fixed */
+  background-color: rgba(128, 128, 128, 0.5); /* Set the background color with transparency */
+  backdrop-filter: blur(10px); /* Apply a blur effect to the layers below */
+  bottom: 0; /* Position the footer bar at the bottom of the page */
+  width: 100%; /* Set the width to 100% */
+  z-index: 500; /* Ensure it is above other content */
+  justify-content: center; /* Center the content horizontally */
+  padding: 10px; /* Add padding to the footer bar */
+  align-items: center; /* Center the content vertically */
+  height: 40px; /* Set the height of the footer bar */
+  flex-direction: row; /* Add this line to make the buttons align horizontally */
+  justify-content: center; /* Add this line to center the buttons horizontally */
+}
+
+/* Select the buttons inside the footer bar */
+.footer-bar-btn {
+  background-color: #007bff; /* Set the background color of the buttons */
+  color: white; /* Set the text color of the buttons */
+  border: none; /* Remove the border of the buttons */
+  padding: 10px; /* Add padding to the buttons */
+  cursor: pointer; /* Set the cursor to a pointer */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Add a drop shadow */
+  border: 1px solid #007bff; /* Add a stroke */
+}
+
+/* Hide the footer bar */
+.footer-bar-hidden {
+  display: none; /* Hide the footer bar by setting the display to none */
+}
+
+/* Show the footer bar */
+.footer-bar-visible {
+  display: flex; /* Show the footer bar by setting the display to flex */
+}
+
+/* Select the edit button inside the footer bar */
+#footer-edit-btn {
+  position: fixed; /* Position the edit button as fixed */
+  bottom: 10px; /* Position the edit button at the bottom */
+  left: 10px; /* Position the edit button at the left */
+  z-index: 999; /* Ensure it is above other content */
+  background-color: rgba(255, 255, 255, 0.2); /* Set the background color with transparency */
+  padding: 5px; /* Add padding to the edit button */
+  border-radius: 5px; /* Add border radius to the edit button */
+  cursor: pointer; /* Set the cursor to a pointer */
+  width: 30px; /* Set the width of the edit button */
+  height: 30px; /* Set the height of the edit button */
+}
+
+/* Select the buttons inside the footer bar */
+#footer-bar button {
+  background-color: rgba(255, 255, 255, 0.2); /* Set the background color with transparency */
+  color: white; /* Set the text color of the buttons */
+  border: none; /* Remove the border of the buttons */
+  padding: 10px 20px; /* Add padding to the buttons */
+  margin: 0 10px; /* Add some margin for spacing */
+  border-radius: 5px; /* Add border radius to the buttons */
+  cursor: pointer; /* Set the cursor to a pointer */
+  transition: background-color 0.3s; /* Add a transition effect to the background color */
+}
+
+/* Select the image inside the edit button */
+#footer-edit-btn img {
+  width: 20px; /* Set the width of the image */
+  height: 20px; /* Set the height of the image */
+  margin-right: 5px; /* Add some space between icon and text */
+  vertical-align: middle; /* Center the icon with the text */
+}

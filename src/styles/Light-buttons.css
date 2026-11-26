@@ -1,0 +1,189 @@
+/* Light Button */
+.light {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 230, 0, 0.5); /* Semi-transparent button background */
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.light.on {
+  background-color: rgba(255, 196, 0, 0.781); /* Semi-transparent button background when on */
+}
+
+.light:hover .LightHoverMenu {
+  display: block; /* Show LightHoverMenu on hover */
+}
+
+/* Light Hover Menu */
+.LightHoverMenu {
+  display: none;
+  position: absolute;
+  background: rgba(50, 50, 50, 0.8); /* Dark grey background with transparency */
+  border: 1px solid #ccc;
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  z-index: 1001;
+  top: 25px;
+  left: -50px;
+  width: 200px;
+  overflow: auto; /* Allow scrolling if content overflows */
+  border-radius: 8px; /* Rounded edges */
+  color: lightgrey; /* Light grey text color */
+}
+
+.LightHoverMenu button, 
+.LightHoverMenu input {
+  width: 100%;
+  margin: 5px 0;
+  border-radius: 4px; /* Rounded input and button edges */
+  background: white; /* Light background for inputs and buttons */
+  color: black; /* Dark text color for inputs and buttons */
+}
+
+
+/* Edit Menu */
+.edit-menu {
+    position: absolute;
+    background: rgba(50, 50, 50, 0.8); /* Dark grey background with transparency */
+    border: 1px solid #ccc;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    z-index: 1001;
+    width: 200px;
+    overflow: auto; /* Allow scrolling if content overflows */
+    border-radius: 8px; /* Rounded edges */
+    color: lightgrey; /* Light grey text color */
+}
+
+.edit-menu label {
+    display: block;
+    margin: 5px 0 2px;
+    color: lightgrey; /* Light grey text color for better contrast */
+}
+
+.edit-menu input {
+    width: calc(100% - 12px); /* Adjust to fit within the menu */
+    margin-bottom: 10px;
+    border-radius: 4px; /* Rounded input edges */
+}
+
+.edit-menu button {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+    border-radius: 4px; /* Rounded button edges */
+}
+
+/* Prevent menus from going out of the page boundaries */
+.LightHoverMenu,
+.lighteditmenu {
+    max-width: calc(100vw - 20px); /* Ensures the menu doesn't exceed viewport width */
+    max-height: calc(100vh - 20px); /* Ensures the menu doesn't exceed viewport height */
+    overflow: auto;
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to right, #ffec00, #ffd700); /* Yellow gradient */
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: orange; /* Slider button color */
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+/* Rounded slider toggle switch color when checked */
+input:checked + .slider {
+  background-color: #ffd000;
+}
+
+input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
+/* Range Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, #ffec00 0%, #ddd 100%); /* Yellow gradient and grey */
+  border-radius: 5px;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: orange; /* Thumb button color */
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: orange; /* Thumb button color */
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Nudge Container */
+.nudge-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.nudge-container button {
+  width: 20px;
+  height: 20px;
+  margin: 0 2px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 20px;
+  text-align: center;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.nudge-container button:hover {
+  background-color: #f0f0f0;
+}

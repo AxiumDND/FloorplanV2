@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;">
+  <title>FloorplanV2</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+  <link rel="stylesheet" href="src/styles/header.css">
+  <link rel="stylesheet" href="src/styles/settings.css">
+  <link rel="stylesheet" href="src/styles/footer.css">
+  <link rel="stylesheet" href="src/styles/Light-buttons.css">
+</head>
+<body>
+  <!-- Header content -->
+  <div id="header-bar" class="header-bar-visible">
+    <div id="floor-buttons-container"></div>
+    <button id="open-settings-btn">
+      <img src="assets/cog.png" alt="Settings" id="open-settings-btn-img" />
+    </button>
+  </div>
+
+  <!-- Main body content -->
+  <div id="main-body">
+    <button id="header-minimise-btn">
+      <img src="assets/minimize.png" alt="Minimize" id="header-minimise-btn-img" />
+    </button>
+    <button id="footer-edit-btn">
+      <img src="assets/edit.png" alt="Edit" id="footer-edit-btn-img" />
+    </button>
+    <div id="floor-panes-container">
+      <div class="floor-pane" id="floor-pane-1"></div>
+      <div class="floor-pane" id="floor-pane-2" style="display: none;"></div>
+      <div class="floor-pane" id="floor-pane-3" style="display: none;"></div>
+      <div class="floor-pane" id="floor-pane-4" style="display: none;"></div>
+      <div class="floor-pane" id="floor-pane-5" style="display: none;"></div>
+      <div class="floor-pane" id="floor-pane-6" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Footer content -->
+  <input type="file" id="image-loader" accept="image/png" style="display: none;" />
+  <div id="footer-bar" class="footer-bar-hidden">
+    <button class="footer-bar-btn">load image</button>
+    <button class="footer-bar-btn" id="add-light-btn">Add Light</button>
+    <button class="footer-bar-btn">button 3</button>
+    <button id="lockButton" class="footer-bar-btn">Lock</button>
+  </div>
+
+  <!-- Settings page -->
+  <div id="settings-page" class="hidden">
+    <button id="close-settings-btn">
+      <img src="assets/close.png" alt="Close" id="close-settings-btn-img" />
+    </button>
+    <h3>Settings</h3>
+    IP Address: <input type="text" id="ip-address" />
+    Username: <input type="text" id="username" />
+    Password: <input type="password" id="password" />
+    Number of Floors: 
+    <select id="number-of-Floors">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
+    <!-- Container for dynamically generated floor name inputs -->
+    <div id="floor-names-container"></div>
+    <!-- Save button -->
+    <button id="save-floor-names-btn">Save Floor Names</button>
+    <button id="saveSettingsButton">Save Settings</button>
+  </div>
+  
+  <!-- Light Edit Menu -->
+  <div id="lighteditmenu" class="edit-menu hidden">
+    <label for="edit-light-name">Name:</label>
+    <input type="text" id="edit-light-name" />
+    <label for="edit-light-module">Module:</label>
+    <input type="text" id="edit-light-module" />
+    <label for="edit-light-device-id">Device ID:</label>
+    <input type="text" id="edit-light-device-id" />
+    <label for="edit-light-channel">Channel:</label>
+    <input type="text" id="edit-light-channel" />
+    <button id="save-light-button">Save</button>
+  </div>
+
+  <!-- Load renderer.js as a CommonJS module -->
+  <script type="module" src="src/Scripts/renderer.js"></script>
+</body>
+</html>
