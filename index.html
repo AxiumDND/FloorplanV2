@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: floorplan:; font-src 'self' data:;">
   <title>FloorplanV2</title>
   <link rel="stylesheet" href="src/styles/main.css">
   <link rel="stylesheet" href="src/styles/header.css">
@@ -41,10 +41,9 @@
   <!-- Footer content -->
   <input type="file" id="image-loader" accept="image/png" style="display: none;" />
   <div id="footer-bar" class="footer-bar-hidden">
-    <button class="footer-bar-btn">load image</button>
-    <button class="footer-bar-btn" id="add-light-btn">Add Light</button>
-    <button class="footer-bar-btn">button 3</button>
-    <button id="lockButton" class="footer-bar-btn">Lock</button>
+    <button class="footer-bar-btn" id="load-image-btn" type="button">Load image</button>
+    <button class="footer-bar-btn" id="add-light-btn" type="button">Add Light</button>
+    <button id="lockButton" class="footer-bar-btn" type="button">Unlock</button>
   </div>
 
   <!-- Settings page -->
@@ -85,7 +84,6 @@
     <button id="save-light-button">Save</button>
   </div>
 
-  <!-- Load renderer.js as a CommonJS module -->
   <script type="module" src="src/Scripts/renderer.js"></script>
 </body>
 </html>

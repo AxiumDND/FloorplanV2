@@ -46,7 +46,7 @@
 
 /* Edit Menu */
 .edit-menu {
-    position: absolute;
+    position: fixed;
     background: rgba(50, 50, 50, 0.8); /* Dark grey background with transparency */
     border: 1px solid #ccc;
     box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.2);

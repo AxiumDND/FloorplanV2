@@ -51,6 +51,5 @@ html, body {
 
 
 .light.locked {
-  cursor: not-allowed; /* Indicate that the light is locked and cannot be moved */
-  pointer-events: none; /* Prevent any interaction with the element */
+  cursor: default;
 }

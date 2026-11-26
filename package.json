@@ -1,9 +1,10 @@
 {
   "name": "floorplan",
   "version": "1.1.6",
+  "description": "Floorplan for placing lights on floor images and controlling an eDin+ system.",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node ./node_modules/electron/cli.js .",
     "dist": "electron-builder"
   },
   "author": "",
@@ -13,22 +14,23 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "net": "^1.0.2",
     "winston": "3.8"
   },
   "build": {
-    "appId": "your.app.id",
+    "appId": "com.modelighting.floorplan",
     "productName": "Floorplan",
     "directories": {
       "buildResources": "assets"
     },
     "files": [
-      "**/*",
-      "!node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/test",
-      "!**/*.map",
-      "dist/**/*",
-      "src/**/*"
+      "main.js",
+      "index.html",
+      "package.json",
+      "src/**/*",
+      "assets/**/*",
+      "userData/settings.example.csv",
+      "!**/*.log",
+      "!**/*.zip"
     ],
     "win": {
       "target": "nsis"

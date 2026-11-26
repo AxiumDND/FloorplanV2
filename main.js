@@ -1,158 +1,147 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol } = require('electron');
 const path = require('path');
-const url = require('url');
 const fs = require('fs');
 const winston = require('winston');
 const {
+    setDataDir,
+    setTcpMessageHandler,
+    settingsPath,
+    ensureSettingsFile,
     setIpAddress,
     sendTcpCommand,
     readFile,
-    writeFile,
-    saveSettingsToFile,
+    saveFloorSettings,
     saveGeneralSettings,
-    updateLightPosition,
-    setupTcpClient
+    saveLight,
+    copyFloorImage,
 } = require('./src/Scripts/mainFunctions');
 
-winston.configure({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}] ${message}`)
-    ),
-    transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' })
-    ]
-});
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'floorplan',
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            corsEnabled: true,
+            stream: true,
+        },
+    },
+]);
 
-let mainWindow;
+let mainWindow = null;
+let dataDir = null;
+
+function getDataDir() {
+    if (app.isPackaged) {
+        return path.join(app.getPath('userData'), 'floorplan-data');
+    }
+    return path.join(__dirname, 'userData');
+}
+
+function configureLogging() {
+    winston.configure({
+        level: 'info',
+        format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.printf(({ timestamp, level, message }) => `${timestamp} [${level}] ${message}`)
+        ),
+        transports: [
+            new winston.transports.Console(),
+            new winston.transports.File({ filename: path.join(dataDir, 'floorplan.log') }),
+        ],
+    });
+}
+
+function registerFloorImageProtocol() {
+    protocol.handle('floorplan', (request) => {
+        const fileName = path.basename(new URL(request.url).pathname);
+        if (!/^floor-[1-6]-image\.png$/.test(fileName)) {
+            return new Response('Not found', { status: 404 });
+        }
+
+        const filePath = path.join(dataDir, fileName);
+        if (!fs.existsSync(filePath)) {
+            return new Response('Not found', { status: 404 });
+        }
+
+        const body = fs.readFileSync(filePath);
+        return new Response(body, {
+            headers: { 'Content-Type': 'image/png' },
+        });
+    });
+}
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: 1100,
+        height: 750,
         webPreferences: {
             preload: path.join(__dirname, 'src', 'Scripts', 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
-            enableRemoteModule: false,
-        }
+        },
     });
 
-    mainWindow.loadURL(url.format({
-        pathname: path.join(__dirname, 'index.html'),
-        protocol: 'file:',
-        slashes: true
-    }));
-
+    mainWindow.loadFile(path.join(__dirname, 'index.html'));
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
-
     winston.info('Main window created and loaded');
 }
 
-// Create a new BrowserWindow when `app` is ready
-app.on('ready', createWindow);
+function handle(channel, fn) {
+    ipcMain.handle(channel, async (_event, ...args) => {
+        try {
+            const data = await fn(...args);
+            return { success: true, data };
+        } catch (error) {
+            winston.error(`${channel}: ${error.message}`);
+            return { success: false, error: error.message };
+        }
+    });
+}
 
-// Quit when all windows are closed
+function registerIpc() {
+    handle('initializeSettings', () => readFile(settingsPath(), 'utf8'));
+    handle('saveFloorSettings', (numFloors, floorNames) => saveFloorSettings(numFloors, floorNames));
+    handle('saveGeneralSettings', (ip, username, password) => saveGeneralSettings(ip, username, password));
+    handle('saveLight', (light) => saveLight(light));
+    handle('copyFloorImage', (floorNumber, sourcePath) => copyFloorImage(floorNumber, sourcePath));
+    handle('setIpAddress', (ip) => {
+        setIpAddress(ip);
+        return ip;
+    });
+    handle('sendTcpCommand', (command) => {
+        sendTcpCommand(command);
+        return command;
+    });
+}
+
+app.whenReady().then(() => {
+    dataDir = getDataDir();
+    setDataDir(dataDir);
+    fs.mkdirSync(dataDir, { recursive: true });
+    ensureSettingsFile(path.join(__dirname, 'userData', 'settings.example.csv'));
+    configureLogging();
+    registerFloorImageProtocol();
+    setTcpMessageHandler((message) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('tcp-message', message);
+        }
+    });
+    registerIpc();
+    createWindow();
+});
+
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
     }
 });
 
-// Re-create a window in the app when the dock icon is clicked
-// and there are no other windows open (macOS)
 app.on('activate', () => {
     if (mainWindow === null) {
         createWindow();
-    }
-});
-
-// IPC Handlers
-ipcMain.handle('initializeSettings', async () => {
-    const filePath = 'userData/settings.csv';
-    try {
-        const settingsData = await readFile(filePath, 'utf8');
-        winston.info('Settings data initialized successfully.');
-        return settingsData; // Return the settings data for use by the renderer
-    } catch (error) {
-        winston.error(`Failed to initialize settings: ${error.message}`);
-        throw new Error(`Failed to initialize settings: ${error.message}`);
-    }
-});
-
-ipcMain.handle('readFile', async (event, filePath, encoding = 'utf8') => {
-    try {
-        const data = await readFile(filePath, encoding);
-        return { success: true, data };
-    } catch (error) {
-        winston.error(`Failed to read file: ${error.message}`);
-        return { success: false, error: `Failed to read file: ${error.message}` };
-    }
-});
-
-ipcMain.handle('writeFile', async (event, filePath, data, encoding = 'utf8') => {
-    try {
-        await writeFile(filePath, data, encoding);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to write file: ${error.message}`);
-        return { success: false, error: `Failed to write file: ${error.message}` };
-    }
-});
-
-ipcMain.handle('saveSettingsToFile', async (event, filePath, numFloors, floorNames) => {
-    try {
-        await saveSettingsToFile(filePath, numFloors, floorNames);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to save settings: ${error.message}`);
-        return { success: false, error: `Failed to save settings: ${error.message}` };
-    }
-});
-
-ipcMain.handle('saveGeneralSettings', async (event, filePath, ip, username, password) => {
-    try {
-        await saveGeneralSettings(filePath, ip, username, password);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to save general settings: ${error.message}`);
-        return { success: false, error: `Failed to save general settings: ${error.message}` };
-    }
-});
-
-ipcMain.handle('saveLightPosition', async (event, lightId, newX, newY) => {
-    try {
-        await updateLightPosition(lightId, newX, newY);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to save light position: ${error.message}`);
-        return { success: false, error: `Failed to save light position: ${error.message}` };
-    }
-});
-
-ipcMain.handle('setIpAddress', (event, ip) => {
-    try {
-        setIpAddress(ip);
-        winston.info(`IP Address set to: ${ip}`);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to set IP address: ${error.message}`);
-        return { success: false, error: `Failed to set IP address: ${error.message}` };
-    }
-});
-
-ipcMain.handle('sendTcpCommand', (event, command) => {
-    try {
-        sendTcpCommand(command);
-        winston.info(`TCP command sent: ${command}`);
-        return { success: true };
-    } catch (error) {
-        winston.error(`Failed to send TCP command: ${error.message}`);
-        return { success: false, error: `Failed to send TCP command: ${error.message}` };
     }
 });

@@ -1,10 +1,4 @@
-/**
- * FILEPATH: /c:/Users/james.woodward/Desktop/floorplanv2 1.10b/src/Styles/header.css
- * 
- * This file contains the styles for the header bar of a web page.
- */
-
-/* Style for the header bar container */
+/* Header bar */
 #header-bar {
   background-color: rgba(128, 128, 128, 0.5);
   backdrop-filter: blur(5px); /* Apply a blur effect to the layers below */

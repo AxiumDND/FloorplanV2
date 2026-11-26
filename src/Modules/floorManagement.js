@@ -1,28 +1,58 @@
 import { parseFloorsFromSettings, parseFloorNamesFromSettings } from './settingsManagement.js';
 
+export function floorImageUrl(floorNumber) {
+    return `floorplan://image/floor-${floorNumber}-image.png?t=${Date.now()}`;
+}
+
+export function getCurrentFloor() {
+    const activeButton = document.querySelector('#floor-buttons-container button.active');
+    const floor = activeButton ? parseInt(activeButton.dataset.floor, 10) : 1;
+    return Number.isInteger(floor) ? floor : 1;
+}
+
 export function initializeFloors(settingsData) {
     const numFloors = parseFloorsFromSettings(settingsData);
     const floorNames = parseFloorNamesFromSettings(settingsData, numFloors);
-
-    updateFloorNames(numFloors, floorNames);
-    updateFloorButtons(floorNames);
-    loadFloorPaneBackgrounds(numFloors);
-    console.log('Floors initialized.');
+    renderFloors(numFloors, floorNames);
 }
 
-function updateFloorNames(numFloors, floorNames) {
-    const floorNamesContainer = document.getElementById('floor-names-container');
-    floorNamesContainer.innerHTML = '';
+export function renderFloors(numFloors, floorNames) {
+    updateFloorNameInputs(numFloors, floorNames);
+    updateFloorButtons(floorNames);
+    for (let i = 1; i <= numFloors; i++) {
+        setFloorBackground(i);
+    }
+}
 
+export function updateFloorNameInputs(numFloors, floorNames) {
+    const floorNamesContainer = document.getElementById('floor-names-container');
+    const previous = [];
+    for (let i = 1; i <= 6; i++) {
+        const existing = document.getElementById(`floor-name-${i}`);
+        previous.push(existing ? existing.value : '');
+    }
+
+    floorNamesContainer.innerHTML = '';
     for (let i = 1; i <= numFloors; i++) {
         const input = document.createElement('input');
         input.type = 'text';
         input.placeholder = `Floor ${i} Name`;
-        input.value = floorNames[i - 1];
+        input.value = (floorNames && floorNames[i - 1]) || previous[i - 1] || `Floor ${i}`;
         input.id = `floor-name-${i}`;
         input.className = 'floor-name-input';
         floorNamesContainer.appendChild(input);
     }
+}
+
+export function setFloorBackground(floorNumber) {
+    const floorPane = document.getElementById(`floor-pane-${floorNumber}`);
+    if (!floorPane) {
+        return;
+    }
+    floorPane.style.backgroundImage = `url('${floorImageUrl(floorNumber)}')`;
+    floorPane.style.backgroundSize = 'contain';
+    floorPane.style.backgroundPosition = 'center';
+    floorPane.style.backgroundRepeat = 'no-repeat';
 }
 
 function updateFloorButtons(floorNames) {
@@ -31,31 +61,25 @@ function updateFloorButtons(floorNames) {
 
     floorNames.forEach((floorName, index) => {
         const button = document.createElement('button');
+        button.type = 'button';
         button.textContent = floorName;
+        button.dataset.floor = String(index + 1);
         button.addEventListener('click', () => {
-            console.log(`${floorName} button clicked`);
             showFloorPane(index + 1);
             setActiveButton(button);
         });
         header.appendChild(button);
     });
-}
 
-function loadFloorPaneBackgrounds(numFloors) {
-    for (let i = 1; i <= numFloors; i++) {
-        const floorPane = document.getElementById(`floor-pane-${i}`);
-        if (floorPane) {
-            floorPane.style.backgroundImage = `url('userData/floor-${i}-image.png?timestamp=${new Date().getTime()}')`;
-            floorPane.style.backgroundSize = 'contain';
-            floorPane.style.backgroundPosition = 'center';
-            floorPane.style.backgroundRepeat = 'no-repeat';
-        }
+    const firstButton = header.querySelector('button');
+    if (firstButton) {
+        setActiveButton(firstButton);
+        showFloorPane(1);
     }
 }
 
 function showFloorPane(floorNumber) {
-    const floorPanes = document.querySelectorAll('.floor-pane');
-    floorPanes.forEach(pane => {
+    document.querySelectorAll('.floor-pane').forEach((pane) => {
         pane.style.display = 'none';
     });
 
@@ -66,8 +90,7 @@ function showFloorPane(floorNumber) {
 }
 
 function setActiveButton(button) {
-    const buttons = document.querySelectorAll('#floor-buttons-container button');
-    buttons.forEach(btn => {
+    document.querySelectorAll('#floor-buttons-container button').forEach((btn) => {
         btn.classList.remove('active');
     });
     button.classList.add('active');
