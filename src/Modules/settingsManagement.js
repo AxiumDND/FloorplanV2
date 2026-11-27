@@ -1,105 +1,104 @@
-export function loadLightData(settingsData) {
-    const lightData = [];
-    const lightRegex = /\$Lightsetting;(\d+);floor,(\d+),([\d.]+)%,([\d.]+)%,([^,]+),(\d+),(\d+),(\d+);/g;
+// The main process owns settings.json and sends the renderer a view of it. The view never holds
+// the password, only whether one is saved.
 
-    let match;
-    while ((match = lightRegex.exec(settingsData)) !== null) {
-        lightData.push({
-            id: parseInt(match[1]),
-            floor: parseInt(match[2]),
-            left: match[3] + '%',
-            top: match[4] + '%',
-            name: match[5],
-            module: match[6],
-            channel: match[7],
-            deviceId: match[8],
-            isOn: false,
-            level: 100
-        });
-    }
-    return lightData;
+const MAX_FLOORS = 6;
+
+function position(value) {
+    return `${Number(value).toFixed(4)}%`;
 }
 
-export function loadSceneButtonData(settingsData) {
-    const sceneData = [];
-    const sceneRegex = /\$Scenebutton;(\d+);floor,(\d+),([\d.]+)%,([\d.]+)%,([^,;]+),(\d+);/g;
-
-    let match;
-    while ((match = sceneRegex.exec(settingsData)) !== null) {
-        sceneData.push({
-            id: parseInt(match[1]),
-            floor: parseInt(match[2]),
-            left: match[3] + '%',
-            top: match[4] + '%',
-            name: match[5],
-            scene: match[6],
-        });
-    }
-    return sceneData;
+export function loadLightData(settings) {
+    return ((settings && settings.lights) || []).map((light) => ({
+        id: light.id,
+        floor: light.floor,
+        left: position(light.x),
+        top: position(light.y),
+        name: light.name,
+        module: light.module,
+        channel: light.channel,
+        deviceId: light.deviceId,
+        isOn: false,
+        level: 100,
+    }));
 }
 
-export function loadPageButtonData(settingsData) {
-    const pageData = [];
-    const pageRegex = /\$Pagebutton;(\d+);floor,(\d+),([\d.]+)%,([\d.]+)%,([^,;]+),(\d+);/g;
-
-    let match;
-    while ((match = pageRegex.exec(settingsData)) !== null) {
-        pageData.push({
-            id: parseInt(match[1]),
-            floor: parseInt(match[2]),
-            left: match[3] + '%',
-            top: match[4] + '%',
-            name: match[5],
-            target: match[6],
-        });
-    }
-    return pageData;
+export function loadSceneButtonData(settings) {
+    return ((settings && settings.scenes) || []).map((button) => ({
+        id: button.id,
+        floor: button.floor,
+        left: position(button.x),
+        top: position(button.y),
+        name: button.name,
+        scene: button.scene,
+    }));
 }
 
-export function parseFloorsFromSettings(settingsData) {
-    const match = settingsData.match(/\$Floornumber,(\d+);/);
-    return match ? parseInt(match[1], 10) : 1;
+export function loadPageButtonData(settings) {
+    return ((settings && settings.pages) || []).map((button) => ({
+        id: button.id,
+        floor: button.floor,
+        left: position(button.x),
+        top: position(button.y),
+        name: button.name,
+        target: button.target,
+    }));
 }
 
-export function parseFloorNamesFromSettings(settingsData, numFloors) {
+export function parseFloorsFromSettings(settings) {
+    const count = Number(settings && settings.floors && settings.floors.count);
+    return Number.isInteger(count) && count >= 1 && count <= MAX_FLOORS ? count : 1;
+}
+
+export function parseFloorNamesFromSettings(settings, numFloors) {
+    const names = (settings && settings.floors && settings.floors.names) || [];
     const floorNames = [];
     for (let i = 1; i <= numFloors; i++) {
-        const regex = new RegExp(`\\$Floorinfo${i},([^;]+);`);
-        const match = settingsData.match(regex);
-        floorNames.push(match ? match[1] : `Floor ${i}`);
+        floorNames.push(names[i - 1] || `Floor ${i}`);
     }
     return floorNames;
 }
 
-export function parseAdditionalSettings(settingsData) {
-    const ipAddressMatch = settingsData.match(/\$ipAddress,([^;]*);/);
-    const userNameMatch = settingsData.match(/\$userName,([^;]*);/);
-    const passwordMatch = settingsData.match(/\$password,([^;]*);/);
-    const connectionTypeMatch = settingsData.match(/\$connectionType,([^;]*);/);
-
+export function parseAdditionalSettings(settings) {
+    const connection = (settings && settings.connection) || {};
+    const secureStorage = (settings && settings.secureStorage) || { available: false, message: '' };
     return {
-        ipAddress: ipAddressMatch ? ipAddressMatch[1] : '',
-        userName: userNameMatch ? userNameMatch[1] : '',
-        password: passwordMatch ? passwordMatch[1] : '',
-        connectionType: connectionTypeMatch && connectionTypeMatch[1].trim().toLowerCase() === 'tcp' ? 'tcp' : 'http',
+        ipAddress: connection.host || '',
+        userName: connection.username || '',
+        hasPassword: connection.hasPassword === true,
+        connectionType: connection.type === 'tcp' ? 'tcp' : 'http',
+        secureStorage,
     };
 }
 
-export function populateSettingsForm(settingsData) {
-    const { ipAddress, userName, password, connectionType } = parseAdditionalSettings(settingsData);
-    const numFloors = parseFloorsFromSettings(settingsData);
+export function populateSettingsForm(settings) {
+    const { ipAddress, userName, hasPassword, connectionType, secureStorage } = parseAdditionalSettings(settings);
+    const numFloors = parseFloorsFromSettings(settings);
 
     const ipInput = document.getElementById('ip-address');
     const typeSelect = document.getElementById('connection-type');
     const userInput = document.getElementById('username');
     const passInput = document.getElementById('password');
+    const clearPassword = document.getElementById('clear-password');
+    const note = document.getElementById('password-storage-note');
     const numFloorsSelect = document.getElementById('number-of-Floors');
 
     if (typeSelect) typeSelect.value = connectionType;
     if (ipInput) ipInput.value = ipAddress;
     if (userInput) userInput.value = userName;
-    if (passInput) passInput.value = password;
+    if (passInput) {
+        passInput.value = '';
+        passInput.disabled = !secureStorage.available;
+        passInput.placeholder = hasPassword ? 'Saved - leave blank to keep' : '';
+    }
+    if (clearPassword) {
+        clearPassword.checked = false;
+        clearPassword.disabled = !hasPassword;
+    }
+    if (note) {
+        note.textContent = secureStorage.available ? '' : secureStorage.message;
+        note.hidden = secureStorage.available;
+    }
     if (numFloorsSelect) numFloorsSelect.value = String(numFloors);
 
-    return { ipAddress, userName, password, connectionType, numFloors };
+    return { ipAddress, userName, hasPassword, connectionType, numFloors, secureStorage };
 }

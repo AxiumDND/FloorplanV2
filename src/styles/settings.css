@@ -86,3 +86,25 @@
 .connection-indicator.state-connecting { background-color: #ffc933; }
 .connection-indicator.state-login-failed,
 .connection-indicator.state-error { background-color: #ff4d4d; }
+
+#settings-page .password-clear {
+  display: block;
+  width: 30%;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+#settings-page .password-clear input {
+  display: inline;
+  width: auto;
+  margin: 0 4px 0 0;
+}
+
+.password-storage-note {
+  width: 30%;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+  color: #ffb066;
+}
+
+.password-storage-note[hidden] { display: none; }

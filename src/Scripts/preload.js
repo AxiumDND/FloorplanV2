@@ -3,8 +3,8 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 contextBridge.exposeInMainWorld('myAPI', {
     initializeSettings: () => ipcRenderer.invoke('initializeSettings'),
     saveFloorSettings: (numFloors, floorNames) => ipcRenderer.invoke('saveFloorSettings', numFloors, floorNames),
-    saveGeneralSettings: (ip, username, password, connectionType) =>
-        ipcRenderer.invoke('saveGeneralSettings', ip, username, password, connectionType),
+    saveGeneralSettings: (ip, username, password, connectionType, clearPassword) =>
+        ipcRenderer.invoke('saveGeneralSettings', ip, username, password, connectionType, clearPassword),
     getConnectionStatus: () => ipcRenderer.invoke('getConnectionStatus'),
     reconnect: () => ipcRenderer.invoke('reconnect'),
     saveLight: (light) => ipcRenderer.invoke('saveLight', light),

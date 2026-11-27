@@ -37,5 +37,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch (error) {
         console.error('Error initializing application:', error);
+        showConnectionStatus({ state: 'error', message: error.message });
     }
 });

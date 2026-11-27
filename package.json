@@ -29,7 +29,6 @@
       "package.json",
       "src/**/*",
       "assets/**/*",
-      "userData/settings.example.csv",
       "!**/*.log",
       "!**/*.zip"
     ],

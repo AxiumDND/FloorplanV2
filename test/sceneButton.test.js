@@ -45,51 +45,57 @@ test('scene state replies and events are parsed', async () => {
     assert.strictEqual(reportMatchesScene({ scene: '0' }, { scene: 0 }), false);
 });
 
-test('scene buttons are read from the settings file', async () => {
+test('scene buttons are read from the settings view', async () => {
     const { loadSceneButtonData, loadLightData } = await loadSettings();
-    const csv = [
-        '$Lightsetting;1;floor,1,50.0000%,50.0000%,Lamp,001,001,001;',
-        '$Scenebutton;1;floor,2,20.5000%,10.0000%,Evening,12;',
-        '$Scenebutton;2;floor,1,30.0000%,40.0000%,Off,3;',
-    ].join('\n');
-    assert.deepStrictEqual(loadSceneButtonData(csv), [
+    const settings = {
+        lights: [{ id: 1, floor: 1, x: 50, y: 50, name: 'Lamp', module: '001', channel: '001', deviceId: '001' }],
+        scenes: [
+            { id: 1, floor: 2, x: 20.5, y: 10, name: 'Evening', scene: '12' },
+            { id: 2, floor: 1, x: 30, y: 40, name: 'Off', scene: '3' },
+        ],
+    };
+    assert.deepStrictEqual(loadSceneButtonData(settings), [
         { id: 1, floor: 2, left: '20.5000%', top: '10.0000%', name: 'Evening', scene: '12' },
         { id: 2, floor: 1, left: '30.0000%', top: '40.0000%', name: 'Off', scene: '3' },
     ]);
-    assert.strictEqual(loadLightData(csv).length, 1);
-    assert.deepStrictEqual(loadSceneButtonData('$Lightsetting;1;floor,1,1%,1%,A,1,1,1;'), []);
+    assert.strictEqual(loadLightData(settings).length, 1);
+    assert.deepStrictEqual(loadSceneButtonData({ lights: settings.lights }), []);
 });
 
-test('saving a scene button adds then replaces its settings line without touching lights', async () => {
+test('saving a scene button adds then replaces its record without touching lights', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'floorplan-'));
     try {
         main.setDataDir(dir);
-        const file = path.join(dir, 'settings.csv');
-        fs.writeFileSync(file, '$Lightsetting;1;floor,1,50.0000%,50.0000%,Lamp,001,001,001;\n');
+        main.ensureSettings();
+        const lightsBefore = main.getSettings().lights;
 
         await main.saveSceneButton({ id: 1, floor: 1, x: 20, y: 10, name: 'Evening', scene: '12' });
         await main.saveSceneButton({ id: 2, floor: 1, x: 30, y: 40, name: 'Off', scene: '3' });
-        await main.saveSceneButton({ id: 1, floor: 1, x: 25, y: 15, name: 'Late, night;', scene: '13' });
+        await main.saveSceneButton({ id: 1, floor: 1, x: 25, y: 15, name: 'Late night', scene: '13' });
 
-        assert.strictEqual(
-            fs.readFileSync(file, 'utf8'),
-            [
-                '$Lightsetting;1;floor,1,50.0000%,50.0000%,Lamp,001,001,001;',
-                '$Scenebutton;1;floor,1,25.0000%,15.0000%,Late night,13;',
-                '$Scenebutton;2;floor,1,30.0000%,40.0000%,Off,3;',
-                '',
-            ].join('\n')
-        );
+        const saved = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8'));
+        assert.deepStrictEqual(saved.scenes, [
+            { id: 1, floor: 1, x: 25, y: 15, name: 'Late night', scene: '13' },
+            { id: 2, floor: 1, x: 30, y: 40, name: 'Off', scene: '3' },
+        ]);
+        assert.deepStrictEqual(saved.lights, lightsBefore);
     } finally {
         fs.rmSync(dir, { recursive: true, force: true });
     }
 });
 
-test('invalid scene button records are rejected', () => {
-    const base = { id: 1, floor: 1, x: 1, y: 1, name: 'A', scene: '1' };
-    assert.throws(() => main.formatSceneLine({ ...base, scene: '1;$X' }));
-    assert.throws(() => main.formatSceneLine({ ...base, scene: 'abc' }));
-    assert.throws(() => main.formatSceneLine({ ...base, floor: 7 }));
-    assert.throws(() => main.formatSceneLine({ ...base, id: 0 }));
-    assert.throws(() => main.formatSceneLine({ ...base, x: 'a' }));
+test('invalid scene button records are rejected', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'floorplan-'));
+    try {
+        main.setDataDir(dir);
+        const base = { id: 1, floor: 1, x: 1, y: 1, name: 'A', scene: '1' };
+        await assert.rejects(main.saveSceneButton({ ...base, scene: '1;$X' }));
+        await assert.rejects(main.saveSceneButton({ ...base, scene: 'abc' }));
+        await assert.rejects(main.saveSceneButton({ ...base, floor: 7 }));
+        await assert.rejects(main.saveSceneButton({ ...base, id: 0 }));
+        await assert.rejects(main.saveSceneButton({ ...base, x: 'a' }));
+        assert.deepStrictEqual(main.getSettings().scenes, []);
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
 });

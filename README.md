@@ -9,7 +9,7 @@ npm install
 npm start
 ```
 
-The first launch creates `userData/settings.csv` from `userData/settings.example.csv` when that file is missing. Floor images and the live settings file stay on the machine and are not committed.
+The first launch creates `userData/settings.json` with one example floor and light when no settings exist. Floor images and the live settings stay on the machine and are not committed.
 
 ## Connecting to the system
 
@@ -23,7 +23,15 @@ Click **Save Settings and Connect**. The app also connects on start-up with the 
 
 Login uses the gateway `$USER,<user-name>,<password>;` command and checks the `!USERERR` reply. Over HTTP it is sent at the start of every request (HTTP keeps no session); over TCP it is sent once after `!GATRDY;`. A wrong username or password stops the connection rather than falling back to Public.
 
-The settings are stored in `userData/settings.csv` as `$connectionType,http|tcp;`, `$ipAddress,...;`, `$userName,...;` and `$password,...;`. The password is saved there as plain text, so keep that file private.
+## Settings and password storage
+
+Settings are stored in `userData/settings.json` (connection, floors, lights, scene buttons, page buttons). Every change is written to a temporary file in the same folder, flushed, then renamed over `settings.json`, so a crash or power cut leaves the previous complete file. Floor images stay beside it as `floor-N-image.png`.
+
+The password is never written in clear text and never sent to the app window. It is encrypted with Electron `safeStorage` (Windows DPAPI, macOS Keychain, or the Linux keyring) and only the encrypted value is stored in `settings.json`. The Settings page shows only whether a password is saved: leave the field blank to keep it, enter a new one to replace it, or tick **Remove saved password**. Changing the username without entering a password clears the saved one.
+
+If `safeStorage` is unavailable (on Linux, no keyring, or only the plain-text fallback), the Settings page says so, the password field is disabled and saving a password is refused. Nothing is written to disk. Connecting without a username and password still works.
+
+An older `settings.csv` is migrated on first launch: floors, lights, scene buttons, page buttons and connection details are copied, the password is moved into `safeStorage`, the password is blanked in the old file and it is renamed to `settings.csv.migrated` (a backup of everything else). If `safeStorage` is unavailable at that moment, everything except the password is migrated, the connection reports why it cannot sign in, and the old file is left untouched until the keyring is available on a later launch, when the password is moved and the old file is blanked. If you do not need that password, save the connection again with the password removed and the old file is blanked.
 
 Run the connection tests with `npm test`.
 
@@ -45,7 +53,7 @@ Run the connection tests with `npm test`.
 A scene button triggers one eDIN+ scene.
 
 - **Add**: click the pencil icon (bottom edit bar) then **Add Scene Button**. A blue "New Scene" button appears on the current floor, grey with a dashed edge because it has no scene yet.
-- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and **Scene number** (1-99999, the `<scn-num>` shown in the eDIN+ configuration) and click **Save**. Dragging and edits are saved to `userData/settings.csv` as `$Scenebutton;ID;floor,N,x%,y%,name,scene;`.
+- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and **Scene number** (1-99999, the `<scn-num>` shown in the eDIN+ configuration) and click **Save**. Dragging and edits are saved to `userData/settings.json`.
 - **Trigger**: click **Lock**, then click the button. It sends `$SCNRECALL,<scene>;` (documented in `docs/gateway-interface.md` 6.1.1) through the existing connection, followed by `?SCN,<scene>;` so the button shows the real state: yellow when the scene is active.
 - Hovering a button also queries `?SCN,<scene>;`. Replies (`!SCN`, and the `!SCNSTATE` event) arrive as `tcp-message`. Over TCP the app sends `$EVTSCN,1;` after connecting so the button follows scenes recalled from elsewhere; HTTP carries no events.
 - A scene that does not exist on the system is acknowledged but does nothing (gateway behaviour), so the button stays inactive. The scene logic is in `src/Modules/sceneButton.js`.
@@ -55,7 +63,7 @@ A scene button triggers one eDIN+ scene.
 A page button switches the panel to another page (one of the floor tabs). The eDIN+ GATEWAY documentation (`docs/gateway-interface.md` vols 1-3) has no page or panel navigation command, so this is in-app navigation only and sends nothing to the gateway.
 
 - **Add**: click the pencil icon (bottom edit bar) then **Add Page Button**. A green "New Page" button appears on the current page, grey with a dashed edge because it has no target yet.
-- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and the page it **Opens** (chosen from your floor names), and click **Save**. Dragging and edits are saved to `userData/settings.csv` as `$Pagebutton;ID;floor,N,x%,y%,name,targetPage;`.
+- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and the page it **Opens** (chosen from your floor names), and click **Save**. Dragging and edits are saved to `userData/settings.json`.
 - **Use**: click **Lock**, then click the button to jump to its target page. If the target page no longer exists (fewer floors configured), the button turns grey and does nothing.
 - The logic is in `src/Modules/pageButton.js`; the on-screen behaviour is in `src/Modules/pageManagement.js`.
 

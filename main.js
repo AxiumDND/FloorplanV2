@@ -1,17 +1,17 @@
-const { app, BrowserWindow, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const {
     setDataDir,
+    setSecretStore,
     setGatewayMessageHandler,
     setConnectionStatusHandler,
-    settingsPath,
-    ensureSettingsFile,
+    ensureSettings,
+    getSettings,
     connectFromSettings,
     getConnectionStatus,
     sendCommand,
-    readFile,
     saveFloorSettings,
     saveGeneralSettings,
     saveLight,
@@ -19,6 +19,7 @@ const {
     savePageButton,
     copyFloorImage,
 } = require('./src/Scripts/mainFunctions');
+const { createElectronSecrets } = require('./src/Scripts/electronSecrets');
 
 protocol.registerSchemesAsPrivileged([
     {
@@ -107,10 +108,10 @@ function handle(channel, fn) {
 }
 
 function registerIpc() {
-    handle('initializeSettings', () => readFile(settingsPath(), 'utf8'));
+    handle('initializeSettings', () => getSettings());
     handle('saveFloorSettings', (numFloors, floorNames) => saveFloorSettings(numFloors, floorNames));
-    handle('saveGeneralSettings', (ip, username, password, connectionType) =>
-        saveGeneralSettings(ip, username, password, connectionType)
+    handle('saveGeneralSettings', (ip, username, password, connectionType, clearPassword) =>
+        saveGeneralSettings(ip, username, password, connectionType, clearPassword)
     );
     handle('getConnectionStatus', () => getConnectionStatus());
     handle('reconnect', () => connectFromSettings());
@@ -128,8 +129,13 @@ app.whenReady().then(() => {
     dataDir = getDataDir();
     setDataDir(dataDir);
     fs.mkdirSync(dataDir, { recursive: true });
-    ensureSettingsFile(path.join(__dirname, 'userData', 'settings.example.csv'));
+    setSecretStore(createElectronSecrets(safeStorage));
     configureLogging();
+    try {
+        ensureSettings();
+    } catch (error) {
+        winston.error(`settings: ${error.message}`);
+    }
     registerFloorImageProtocol();
     setGatewayMessageHandler((message) => {
         if (mainWindow && !mainWindow.isDestroyed()) {

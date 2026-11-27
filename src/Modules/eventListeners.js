@@ -2,6 +2,7 @@ import { addLightToCurrentFloor } from './lightManagement.js';
 import { addSceneButtonToCurrentFloor } from './sceneManagement.js';
 import { addPageButtonToCurrentFloor, refreshPageButtons } from './pageManagement.js';
 import { showConnectionStatus } from './connectionStatus.js';
+import { populateSettingsForm } from './settingsManagement.js';
 import { getCurrentFloor, renderFloors, setFloorBackground, updateFloorNameInputs } from './floorManagement.js';
 
 let isLocked = true;
@@ -41,13 +42,23 @@ export function addEventListeners() {
         const connectionType = document.getElementById('connection-type').value;
         const ip = document.getElementById('ip-address').value.trim();
         const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const result = await window.myAPI.saveGeneralSettings(ip, username, password, connectionType);
+        const passwordInput = document.getElementById('password');
+        const clearPassword = document.getElementById('clear-password');
+        const result = await window.myAPI.saveGeneralSettings(
+            ip,
+            username,
+            passwordInput.value,
+            connectionType,
+            clearPassword.checked
+        );
 
         if (!result.success) {
             console.error('Failed to save general settings:', result.error);
             showConnectionStatus({ state: 'error', message: result.error });
+            return;
         }
+        passwordInput.value = '';
+        populateSettingsForm(result.data);
     });
 
     document.getElementById('number-of-Floors').addEventListener('change', (event) => {
