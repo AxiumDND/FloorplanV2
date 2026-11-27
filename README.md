@@ -34,6 +34,10 @@ Run the connection tests with `npm test`.
 - Lights start locked. **Unlock** allows dragging. A drag saves the new position.
 - **Add Light** creates a light on the current floor and saves it.
 - Double-click a light to edit its name, module, channel, and device ID.
-- Hovering a light sends `?CHANLEVELX,...` to the controller. Replies arrive as a `tcp-message` event on `document` (for both HTTP and TCP) for the next piece of work.
+- Every light is one lighting channel on the eDIN+ system: **Module** = MBus address (1-511), **Device ID** = module device code (1-255), **Channel** = channel number. A light with a missing or out-of-range value shows grey with a dashed edge ("No channel assigned") and sends nothing.
+- Hovering a light sends `?CHANLEVELX,<module>,<device ID>,<channel>;`. The `!CHANLEVELX` reply (also `!CHANLEVEL` and the `!CHANFADE` event) sets the light's brightness; `!CHANSTOP` re-queries it and a non-zero `!CHANERR` outlines the light in red. Replies arrive as a `tcp-message` event on `document` (for both HTTP and TCP).
+- While the plan is locked, the hover panel has an on/off switch and a 0-100% slider. Releasing them sends `$CHANFADE,<module>,<device ID>,<channel>,<level 0-255>,500;`. Switching on restores the last non-zero level (255 if none).
+- Over TCP the app also sends `$EVTOUT,1;` after connecting so output events (`!CHANFADE`, `!CHANSTOP`) keep lights in step with other controllers. HTTP carries no events.
+- Only documented gateway commands are used (`docs/gateway-interface.md` Channel API, vol 2 events and live levels). The channel logic is in `src/Modules/lightChannel.js`.
 
 A packaged build keeps its data in the Electron user-data folder under `floorplan-data`, separate from this working copy.

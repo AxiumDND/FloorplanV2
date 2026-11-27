@@ -1,5 +1,5 @@
 import { initializeFloors } from '../Modules/floorManagement.js';
-import { initializeLights, bindLightEditor } from '../Modules/lightManagement.js';
+import { initializeLights, bindLightEditor, bindChannelFeedback } from '../Modules/lightManagement.js';
 import { addEventListeners } from '../Modules/eventListeners.js';
 import { populateSettingsForm } from '../Modules/settingsManagement.js';
 import { showConnectionStatus } from '../Modules/connectionStatus.js';
@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         populateSettingsForm(settingsData);
         addEventListeners();
         bindLightEditor();
+        bindChannelFeedback();
 
         window.myAPI.onConnectionStatus(showConnectionStatus);
         const status = await window.myAPI.getConnectionStatus();

@@ -3,6 +3,7 @@
   position: absolute;
   width: 30px;
   height: 30px;
+  --level: 0;
   background-color: rgba(255, 230, 0, 0.5); /* Semi-transparent button background */
   border-radius: 50%;
   cursor: pointer;
@@ -10,7 +11,35 @@
 }
 
 .light.on {
-  background-color: rgba(255, 196, 0, 0.781); /* Semi-transparent button background when on */
+  background-color: rgba(255, 196, 0, calc(0.5 + var(--level) * 0.5)); /* Brighter as the channel level rises */
+  box-shadow: 0 0 calc(var(--level) * 14px) rgba(255, 196, 0, 0.9);
+}
+
+/* Not tied to a valid module / device ID / channel yet */
+.light.unassigned {
+  background-color: rgba(160, 160, 160, 0.5);
+  border: 2px dashed #666;
+  box-sizing: border-box;
+}
+
+.light.channel-error {
+  outline: 2px solid #d33;
+}
+
+/* Level controls only while the plan is locked; unlocked is for placing lights */
+.light:not(.locked) .LightHoverMenu {
+  display: none !important;
+}
+
+.light-menu-channel {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.light-level-value {
+  display: block;
+  text-align: right;
+  font-size: 12px;
 }
 
 .light:hover .LightHoverMenu {
