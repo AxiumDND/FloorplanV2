@@ -38,6 +38,24 @@ export function loadSceneButtonData(settingsData) {
     return sceneData;
 }
 
+export function loadPageButtonData(settingsData) {
+    const pageData = [];
+    const pageRegex = /\$Pagebutton;(\d+);floor,(\d+),([\d.]+)%,([\d.]+)%,([^,;]+),(\d+);/g;
+
+    let match;
+    while ((match = pageRegex.exec(settingsData)) !== null) {
+        pageData.push({
+            id: parseInt(match[1]),
+            floor: parseInt(match[2]),
+            left: match[3] + '%',
+            top: match[4] + '%',
+            name: match[5],
+            target: match[6],
+        });
+    }
+    return pageData;
+}
+
 export function parseFloorsFromSettings(settingsData) {
     const match = settingsData.match(/\$Floornumber,(\d+);/);
     return match ? parseInt(match[1], 10) : 1;

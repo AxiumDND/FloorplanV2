@@ -13,3 +13,5 @@ $Floorinfo1,Floor 1;
 $Lightsetting;1;floor,1,50.0000%,50.0000%,Example light,001,001,001;
 [Scene Button Settings]
 [Scenebutton;ID;floor,Number,xpos,ypos,button name,scene number;]
+[Page Button Settings]
+[Pagebutton;ID;floor,Number,xpos,ypos,button name,target page number;]

@@ -1,5 +1,6 @@
 import { addLightToCurrentFloor } from './lightManagement.js';
 import { addSceneButtonToCurrentFloor } from './sceneManagement.js';
+import { addPageButtonToCurrentFloor, refreshPageButtons } from './pageManagement.js';
 import { showConnectionStatus } from './connectionStatus.js';
 import { getCurrentFloor, renderFloors, setFloorBackground, updateFloorNameInputs } from './floorManagement.js';
 
@@ -14,6 +15,10 @@ export function addEventListeners() {
 
     document.getElementById('add-scene-btn').addEventListener('click', () => {
         addSceneButtonToCurrentFloor();
+    });
+
+    document.getElementById('add-page-btn').addEventListener('click', () => {
+        addPageButtonToCurrentFloor();
     });
 
     document.getElementById('header-minimise-btn').addEventListener('click', () => {
@@ -64,6 +69,7 @@ export function addEventListeners() {
             return;
         }
         renderFloors(numFloors, floorNames);
+        refreshPageButtons();
     });
 
     document.getElementById('load-image-btn').addEventListener('click', () => {
@@ -96,6 +102,9 @@ function setLightsLocked(locked) {
     document.body.dataset.lightsLocked = locked ? 'true' : 'false';
     document.getElementById('lockButton').textContent = locked ? 'Unlock' : 'Lock';
     document.querySelectorAll('.scene-button').forEach((button) => {
+        button.classList.toggle('locked', locked);
+    });
+    document.querySelectorAll('.page-button').forEach((button) => {
         button.classList.toggle('locked', locked);
     });
     document.querySelectorAll('.light').forEach((light) => {

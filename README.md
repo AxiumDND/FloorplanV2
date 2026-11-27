@@ -50,4 +50,13 @@ A scene button triggers one eDIN+ scene.
 - Hovering a button also queries `?SCN,<scene>;`. Replies (`!SCN`, and the `!SCNSTATE` event) arrive as `tcp-message`. Over TCP the app sends `$EVTSCN,1;` after connecting so the button follows scenes recalled from elsewhere; HTTP carries no events.
 - A scene that does not exist on the system is acknowledged but does nothing (gateway behaviour), so the button stays inactive. The scene logic is in `src/Modules/sceneButton.js`.
 
+## Page buttons
+
+A page button switches the panel to another page (one of the floor tabs). The eDIN+ GATEWAY documentation (`docs/gateway-interface.md` vols 1-3) has no page or panel navigation command, so this is in-app navigation only and sends nothing to the gateway.
+
+- **Add**: click the pencil icon (bottom edit bar) then **Add Page Button**. A green "New Page" button appears on the current page, grey with a dashed edge because it has no target yet.
+- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and the page it **Opens** (chosen from your floor names), and click **Save**. Dragging and edits are saved to `userData/settings.csv` as `$Pagebutton;ID;floor,N,x%,y%,name,targetPage;`.
+- **Use**: click **Lock**, then click the button to jump to its target page. If the target page no longer exists (fewer floors configured), the button turns grey and does nothing.
+- The logic is in `src/Modules/pageButton.js`; the on-screen behaviour is in `src/Modules/pageManagement.js`.
+
 A packaged build keeps its data in the Electron user-data folder under `floorplan-data`, separate from this working copy.

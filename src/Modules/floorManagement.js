@@ -10,6 +10,20 @@ export function getCurrentFloor() {
     return Number.isInteger(floor) ? floor : 1;
 }
 
+export function getFloorNames() {
+    return [...document.querySelectorAll('#floor-buttons-container button')].map((button) => button.textContent);
+}
+
+export function goToFloor(floorNumber) {
+    const button = document.querySelector(`#floor-buttons-container button[data-floor="${floorNumber}"]`);
+    if (!button) {
+        return false;
+    }
+    showFloorPane(floorNumber);
+    setActiveButton(button);
+    return true;
+}
+
 export function initializeFloors(settingsData) {
     const numFloors = parseFloorsFromSettings(settingsData);
     const floorNames = parseFloorNamesFromSettings(settingsData, numFloors);

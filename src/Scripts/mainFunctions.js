@@ -221,6 +221,48 @@ async function saveSceneButton(button) {
     await writeFile(filePath, settingsData, 'utf8');
 }
 
+function formatPageLine(button) {
+    const id = Number(button.id);
+    const floor = Number(button.floor);
+    const x = Number(button.x);
+    const y = Number(button.y);
+    if (!Number.isInteger(id) || id < 1) {
+        throw new Error('Page button id must be a positive number');
+    }
+    if (!Number.isInteger(floor) || floor < 1 || floor > 6) {
+        throw new Error('Page button floor must be from 1 to 6');
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        throw new Error('Page button position is not a number');
+    }
+
+    const name = String(button.name ?? 'New Page').replace(/[;,\r\n]/g, '').trim() || 'New Page';
+    const target = String(button.target ?? '0').trim();
+    if (!/^\d+$/.test(target) || Number(target) > 6) {
+        throw new Error('Page button target must be a page number from 1 to 6, or 0 for none');
+    }
+
+    return `$Pagebutton;${id};floor,${floor},${x.toFixed(4)}%,${y.toFixed(4)}%,${name},${Number(target)};`;
+}
+
+async function savePageButton(button) {
+    const filePath = settingsPath();
+    let settingsData = await readFile(filePath, 'utf8');
+    const line = formatPageLine(button);
+    const regex = new RegExp(`\\$Pagebutton;${Number(button.id)};floor,[^;]*;`);
+
+    if (regex.test(settingsData)) {
+        settingsData = settingsData.replace(regex, line);
+    } else {
+        if (!settingsData.endsWith('\n')) {
+            settingsData += '\n';
+        }
+        settingsData += `${line}\n`;
+    }
+
+    await writeFile(filePath, settingsData, 'utf8');
+}
+
 function copyFloorImage(floorNumber, sourcePath) {
     const floor = Number(floorNumber);
     if (!Number.isInteger(floor) || floor < 1 || floor > 6) {
@@ -251,5 +293,7 @@ module.exports = {
     saveLight,
     formatSceneLine,
     saveSceneButton,
+    formatPageLine,
+    savePageButton,
     copyFloorImage,
 };
