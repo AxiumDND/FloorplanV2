@@ -15,6 +15,7 @@
   <!-- Header content -->
   <div id="header-bar" class="header-bar-visible">
     <div id="floor-buttons-container"></div>
+    <span id="connection-indicator" class="connection-indicator state-disconnected" title="Not connected"></span>
     <button id="open-settings-btn">
       <img src="assets/cog.png" alt="Settings" id="open-settings-btn-img" />
     </button>
@@ -52,9 +53,15 @@
       <img src="assets/close.png" alt="Close" id="close-settings-btn-img" />
     </button>
     <h3>Settings</h3>
+    Connection type:
+    <select id="connection-type">
+      <option value="http" selected>HTTP (default)</option>
+      <option value="tcp">TCP (port 26)</option>
+    </select>
     IP Address: <input type="text" id="ip-address" />
-    Username: <input type="text" id="username" />
-    Password: <input type="password" id="password" />
+    Username: <input type="text" id="username" autocomplete="off" />
+    Password: <input type="password" id="password" autocomplete="off" />
+    <div id="connection-status-text" class="connection-status-text" role="status"></div>
     Number of Floors: 
     <select id="number-of-Floors">
       <option value="1">1</option>
@@ -68,7 +75,7 @@
     <div id="floor-names-container"></div>
     <!-- Save button -->
     <button id="save-floor-names-btn">Save Floor Names</button>
-    <button id="saveSettingsButton">Save Settings</button>
+    <button id="saveSettingsButton">Save Settings and Connect</button>
   </div>
   
   <!-- Light Edit Menu -->

@@ -1,5 +1,6 @@
 [General Settings];
 [key,value;]
+$connectionType,http;
 $ipAddress,;
 $userName,;
 $password,;

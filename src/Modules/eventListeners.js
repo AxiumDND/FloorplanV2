@@ -1,4 +1,5 @@
 import { addLightToCurrentFloor } from './lightManagement.js';
+import { showConnectionStatus } from './connectionStatus.js';
 import { getCurrentFloor, renderFloors, setFloorBackground, updateFloorNameInputs } from './floorManagement.js';
 
 let isLocked = true;
@@ -27,17 +28,15 @@ export function addEventListeners() {
     });
 
     document.getElementById('saveSettingsButton').addEventListener('click', async () => {
+        const connectionType = document.getElementById('connection-type').value;
         const ip = document.getElementById('ip-address').value.trim();
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
-        const result = await window.myAPI.saveGeneralSettings(ip, username, password);
+        const result = await window.myAPI.saveGeneralSettings(ip, username, password, connectionType);
 
         if (!result.success) {
             console.error('Failed to save general settings:', result.error);
-            return;
-        }
-        if (ip) {
-            window.myAPI.setIpAddress(ip);
+            showConnectionStatus({ state: 'error', message: result.error });
         }
     });
 

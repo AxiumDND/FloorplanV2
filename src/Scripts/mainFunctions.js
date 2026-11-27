@@ -1,20 +1,32 @@
-const net = require('net');
 const fs = require('fs');
 const path = require('path');
 
-const TCP_PORT = 26;
+const { createGatewayConnection, normalizeConnectionType, validateSettings } = require('./gatewayConnection');
 
 let dataDir = null;
-let client = null;
-let ipAddress = '';
-let onTcpMessage = () => {};
+let onGatewayMessage = () => {};
+let onConnectionStatus = () => {};
+
+const connection = createGatewayConnection({
+    onMessage: (message) => onGatewayMessage(message),
+    onStatus: (status) => {
+        // Credentials never go to the log; only the state and target are written.
+        console.info(`Connection ${status.state} (${status.type} ${status.host})${status.message ? `: ${status.message}` : ''}`);
+        onConnectionStatus(status);
+    },
+    log: (line) => console.info(line),
+});
 
 function setDataDir(dir) {
     dataDir = dir;
 }
 
-function setTcpMessageHandler(handler) {
-    onTcpMessage = handler;
+function setGatewayMessageHandler(handler) {
+    onGatewayMessage = handler;
+}
+
+function setConnectionStatusHandler(handler) {
+    onConnectionStatus = handler;
 }
 
 function settingsPath() {
@@ -33,48 +45,34 @@ function ensureSettingsFile(examplePath) {
     return filePath;
 }
 
-function setupTcpClient() {
-    if (!ipAddress) {
-        return;
-    }
-
-    client = new net.Socket();
-    client.connect(TCP_PORT, ipAddress, () => {
-        console.info(`Connected to the lighting system at ${ipAddress}:${TCP_PORT}`);
-    });
-
-    client.on('data', (data) => {
-        const message = data.toString();
-        console.info(`Received: ${message}`);
-        onTcpMessage(message);
-    });
-
-    client.on('close', () => {
-        console.info('Connection to lighting system closed');
-    });
-
-    client.on('error', (err) => {
-        console.error(`TCP client error: ${err.message}`);
-    });
+function parseGeneralSettings(settingsData) {
+    const read = (key) => {
+        const match = settingsData.match(new RegExp(`\\$${key},([^;]*);`));
+        return match ? match[1] : '';
+    };
+    return {
+        type: normalizeConnectionType(read('connectionType')),
+        host: read('ipAddress').trim(),
+        username: read('userName'),
+        password: read('password'),
+    };
 }
 
-function setIpAddress(ip) {
-    ipAddress = (ip || '').trim();
-    if (client) {
-        client.destroy();
-        client = null;
-    }
-    if (ipAddress) {
-        setupTcpClient();
-    }
+async function loadGeneralSettings() {
+    return parseGeneralSettings(await readFile(settingsPath(), 'utf8'));
 }
 
-function sendTcpCommand(command) {
-    if (!client || !client.writable) {
-        return false;
-    }
-    client.write(command);
-    return true;
+async function connectFromSettings() {
+    connection.connect(await loadGeneralSettings());
+    return connection.getStatus();
+}
+
+function sendCommand(command) {
+    return connection.send(command);
+}
+
+function getConnectionStatus() {
+    return connection.getStatus();
 }
 
 function readFile(filePath, encoding = 'utf8') {
@@ -85,10 +83,17 @@ function writeFile(filePath, data, encoding = 'utf8') {
     return fs.promises.writeFile(filePath, data, encoding);
 }
 
-async function saveGeneralSettings(ip, username, password) {
+async function saveGeneralSettings(ip, username, password, connectionType) {
+    const type = normalizeConnectionType(connectionType);
+    const host = String(ip ?? '').trim();
+    const problem = validateSettings({ host: host || 'localhost', username, password });
+    if (problem) {
+        throw new Error(problem);
+    }
+
     const filePath = settingsPath();
     let settingsData = await readFile(filePath, 'utf8');
-    const fields = { ipAddress: ip, userName: username, password: password };
+    const fields = { connectionType: type, ipAddress: host, userName: username, password: password };
     for (const [key, value] of Object.entries(fields)) {
         const safeValue = String(value ?? '').replace(/[;\r\n]/g, '');
         const regex = new RegExp(`\\$${key},([^;]*);`);
@@ -100,6 +105,7 @@ async function saveGeneralSettings(ip, username, password) {
         }
     }
     await writeFile(filePath, settingsData, 'utf8');
+    return connectFromSettings();
 }
 
 async function saveFloorSettings(numFloors, floorNames) {
@@ -188,11 +194,14 @@ function copyFloorImage(floorNumber, sourcePath) {
 
 module.exports = {
     setDataDir,
-    setTcpMessageHandler,
+    setGatewayMessageHandler,
+    setConnectionStatusHandler,
     settingsPath,
     ensureSettingsFile,
-    setIpAddress,
-    sendTcpCommand,
+    parseGeneralSettings,
+    connectFromSettings,
+    getConnectionStatus,
+    sendCommand,
     readFile,
     saveFloorSettings,
     saveGeneralSettings,

@@ -4,11 +4,13 @@ const fs = require('fs');
 const winston = require('winston');
 const {
     setDataDir,
-    setTcpMessageHandler,
+    setGatewayMessageHandler,
+    setConnectionStatusHandler,
     settingsPath,
     ensureSettingsFile,
-    setIpAddress,
-    sendTcpCommand,
+    connectFromSettings,
+    getConnectionStatus,
+    sendCommand,
     readFile,
     saveFloorSettings,
     saveGeneralSettings,
@@ -105,15 +107,15 @@ function handle(channel, fn) {
 function registerIpc() {
     handle('initializeSettings', () => readFile(settingsPath(), 'utf8'));
     handle('saveFloorSettings', (numFloors, floorNames) => saveFloorSettings(numFloors, floorNames));
-    handle('saveGeneralSettings', (ip, username, password) => saveGeneralSettings(ip, username, password));
+    handle('saveGeneralSettings', (ip, username, password, connectionType) =>
+        saveGeneralSettings(ip, username, password, connectionType)
+    );
+    handle('getConnectionStatus', () => getConnectionStatus());
+    handle('reconnect', () => connectFromSettings());
     handle('saveLight', (light) => saveLight(light));
     handle('copyFloorImage', (floorNumber, sourcePath) => copyFloorImage(floorNumber, sourcePath));
-    handle('setIpAddress', (ip) => {
-        setIpAddress(ip);
-        return ip;
-    });
-    handle('sendTcpCommand', (command) => {
-        sendTcpCommand(command);
+    handle('sendCommand', (command) => {
+        sendCommand(command);
         return command;
     });
 }
@@ -125,13 +127,19 @@ app.whenReady().then(() => {
     ensureSettingsFile(path.join(__dirname, 'userData', 'settings.example.csv'));
     configureLogging();
     registerFloorImageProtocol();
-    setTcpMessageHandler((message) => {
+    setGatewayMessageHandler((message) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('tcp-message', message);
         }
     });
+    setConnectionStatusHandler((status) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('connection-status', status);
+        }
+    });
     registerIpc();
     createWindow();
+    connectFromSettings().catch((error) => winston.error(`connect: ${error.message}`));
 });
 
 app.on('window-all-closed', () => {

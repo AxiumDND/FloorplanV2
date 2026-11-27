@@ -2,6 +2,7 @@ import { initializeFloors } from '../Modules/floorManagement.js';
 import { initializeLights, bindLightEditor } from '../Modules/lightManagement.js';
 import { addEventListeners } from '../Modules/eventListeners.js';
 import { populateSettingsForm } from '../Modules/settingsManagement.js';
+import { showConnectionStatus } from '../Modules/connectionStatus.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -13,12 +14,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         const settingsData = result.data;
         initializeFloors(settingsData);
         initializeLights(settingsData);
-        const { ipAddress } = populateSettingsForm(settingsData);
+        populateSettingsForm(settingsData);
         addEventListeners();
         bindLightEditor();
 
-        if (ipAddress) {
-            window.myAPI.setIpAddress(ipAddress);
+        window.myAPI.onConnectionStatus(showConnectionStatus);
+        const status = await window.myAPI.getConnectionStatus();
+        if (status.success) {
+            showConnectionStatus(status.data);
         }
 
         window.myAPI.onTcpMessage((message) => {

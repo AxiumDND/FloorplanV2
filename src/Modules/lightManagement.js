@@ -116,7 +116,7 @@ function attachLightInteractions(light) {
 
     light.addEventListener('mouseover', () => {
         const { module, deviceId, channel } = light.dataset;
-        window.myAPI.sendTcpCommand(`?CHANLEVELX,${module},${deviceId},${channel};`);
+        window.myAPI.sendCommand(`?CHANLEVELX,${module},${deviceId},${channel};`);
     });
 
     light.addEventListener('dblclick', (event) => {

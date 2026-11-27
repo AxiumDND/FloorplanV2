@@ -60,3 +60,29 @@
   border-radius: 5px; /* Example: Rounded corners */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Example: Slight shadow for depth */
 }
+
+.connection-status-text {
+  width: 30%;
+  min-height: 1.2em;
+  margin-bottom: 10px;
+  font-size: 0.9em;
+}
+
+.connection-status-text[data-state="connected"] { color: #5fe08a; }
+.connection-status-text[data-state="connecting"] { color: #ffd966; }
+.connection-status-text[data-state="login-failed"],
+.connection-status-text[data-state="error"] { color: #ff7a7a; }
+
+.connection-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-left: 12px;
+  border-radius: 50%;
+  background-color: #888;
+}
+
+.connection-indicator.state-connected { background-color: #3ccf6e; }
+.connection-indicator.state-connecting { background-color: #ffc933; }
+.connection-indicator.state-login-failed,
+.connection-indicator.state-error { background-color: #ff4d4d; }

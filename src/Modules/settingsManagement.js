@@ -39,27 +39,31 @@ export function parseAdditionalSettings(settingsData) {
     const ipAddressMatch = settingsData.match(/\$ipAddress,([^;]*);/);
     const userNameMatch = settingsData.match(/\$userName,([^;]*);/);
     const passwordMatch = settingsData.match(/\$password,([^;]*);/);
+    const connectionTypeMatch = settingsData.match(/\$connectionType,([^;]*);/);
 
     return {
         ipAddress: ipAddressMatch ? ipAddressMatch[1] : '',
         userName: userNameMatch ? userNameMatch[1] : '',
         password: passwordMatch ? passwordMatch[1] : '',
+        connectionType: connectionTypeMatch && connectionTypeMatch[1].trim().toLowerCase() === 'tcp' ? 'tcp' : 'http',
     };
 }
 
 export function populateSettingsForm(settingsData) {
-    const { ipAddress, userName, password } = parseAdditionalSettings(settingsData);
+    const { ipAddress, userName, password, connectionType } = parseAdditionalSettings(settingsData);
     const numFloors = parseFloorsFromSettings(settingsData);
 
     const ipInput = document.getElementById('ip-address');
+    const typeSelect = document.getElementById('connection-type');
     const userInput = document.getElementById('username');
     const passInput = document.getElementById('password');
     const numFloorsSelect = document.getElementById('number-of-Floors');
 
+    if (typeSelect) typeSelect.value = connectionType;
     if (ipInput) ipInput.value = ipAddress;
     if (userInput) userInput.value = userName;
     if (passInput) passInput.value = password;
     if (numFloorsSelect) numFloorsSelect.value = String(numFloors);
 
-    return { ipAddress, userName, password, numFloors };
+    return { ipAddress, userName, password, connectionType, numFloors };
 }
