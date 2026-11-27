@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('myAPI', {
     getConnectionStatus: () => ipcRenderer.invoke('getConnectionStatus'),
     reconnect: () => ipcRenderer.invoke('reconnect'),
     saveLight: (light) => ipcRenderer.invoke('saveLight', light),
+    saveSceneButton: (button) => ipcRenderer.invoke('saveSceneButton', button),
     copyFloorImage: (floorNumber, sourcePath) => ipcRenderer.invoke('copyFloorImage', floorNumber, sourcePath),
     pathForFile: (file) => webUtils.getPathForFile(file),
     sendCommand: (command) => ipcRenderer.invoke('sendCommand', command),

@@ -20,6 +20,24 @@ export function loadLightData(settingsData) {
     return lightData;
 }
 
+export function loadSceneButtonData(settingsData) {
+    const sceneData = [];
+    const sceneRegex = /\$Scenebutton;(\d+);floor,(\d+),([\d.]+)%,([\d.]+)%,([^,;]+),(\d+);/g;
+
+    let match;
+    while ((match = sceneRegex.exec(settingsData)) !== null) {
+        sceneData.push({
+            id: parseInt(match[1]),
+            floor: parseInt(match[2]),
+            left: match[3] + '%',
+            top: match[4] + '%',
+            name: match[5],
+            scene: match[6],
+        });
+    }
+    return sceneData;
+}
+
 export function parseFloorsFromSettings(settingsData) {
     const match = settingsData.match(/\$Floornumber,(\d+);/);
     return match ? parseInt(match[1], 10) : 1;

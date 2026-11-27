@@ -11,3 +11,5 @@ $Floorinfo1,Floor 1;
 [Light Settings]
 [Lightsetting;ID;floor,Number,xpos,ypos,light name,module,channel,DeviceID;]
 $Lightsetting;1;floor,1,50.0000%,50.0000%,Example light,001,001,001;
+[Scene Button Settings]
+[Scenebutton;ID;floor,Number,xpos,ypos,button name,scene number;]

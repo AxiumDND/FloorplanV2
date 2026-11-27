@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="src/styles/settings.css">
   <link rel="stylesheet" href="src/styles/footer.css">
   <link rel="stylesheet" href="src/styles/Light-buttons.css">
+  <link rel="stylesheet" href="src/styles/scene-buttons.css">
 </head>
 <body>
   <!-- Header content -->
@@ -44,6 +45,7 @@
   <div id="footer-bar" class="footer-bar-hidden">
     <button class="footer-bar-btn" id="load-image-btn" type="button">Load image</button>
     <button class="footer-bar-btn" id="add-light-btn" type="button">Add Light</button>
+    <button class="footer-bar-btn" id="add-scene-btn" type="button">Add Scene Button</button>
     <button id="lockButton" class="footer-bar-btn" type="button">Unlock</button>
   </div>
 
@@ -89,6 +91,16 @@
     <label for="edit-light-channel">Channel:</label>
     <input type="text" id="edit-light-channel" />
     <button id="save-light-button">Save</button>
+  </div>
+
+  <!-- Scene Button Edit Menu -->
+  <div id="sceneeditmenu" class="edit-menu hidden">
+    <label for="edit-scene-name">Name:</label>
+    <input type="text" id="edit-scene-name" />
+    <label for="edit-scene-number">Scene number:</label>
+    <input type="text" id="edit-scene-number" inputmode="numeric" />
+    <div id="edit-scene-error" class="edit-menu-error" role="alert"></div>
+    <button id="save-scene-button">Save</button>
   </div>
 
   <script type="module" src="src/Scripts/renderer.js"></script>

@@ -178,6 +178,49 @@ async function saveLight(light) {
     await writeFile(filePath, settingsData, 'utf8');
 }
 
+function formatSceneLine(button) {
+    const id = Number(button.id);
+    const floor = Number(button.floor);
+    const x = Number(button.x);
+    const y = Number(button.y);
+    if (!Number.isInteger(id) || id < 1) {
+        throw new Error('Scene button id must be a positive number');
+    }
+    if (!Number.isInteger(floor) || floor < 1 || floor > 6) {
+        throw new Error('Scene button floor must be from 1 to 6');
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+        throw new Error('Scene button position is not a number');
+    }
+
+    const clean = (value, fallback) => String(value ?? fallback).replace(/[;,\r\n]/g, '').trim() || fallback;
+    const name = clean(button.name, 'New Scene');
+    const scene = clean(button.scene, '0');
+    if (!/^\d+$/.test(scene)) {
+        throw new Error('Scene number must be a whole number');
+    }
+
+    return `$Scenebutton;${id};floor,${floor},${x.toFixed(4)}%,${y.toFixed(4)}%,${name},${scene};`;
+}
+
+async function saveSceneButton(button) {
+    const filePath = settingsPath();
+    let settingsData = await readFile(filePath, 'utf8');
+    const line = formatSceneLine(button);
+    const regex = new RegExp(`\\$Scenebutton;${Number(button.id)};floor,[^;]*;`);
+
+    if (regex.test(settingsData)) {
+        settingsData = settingsData.replace(regex, line);
+    } else {
+        if (!settingsData.endsWith('\n')) {
+            settingsData += '\n';
+        }
+        settingsData += `${line}\n`;
+    }
+
+    await writeFile(filePath, settingsData, 'utf8');
+}
+
 function copyFloorImage(floorNumber, sourcePath) {
     const floor = Number(floorNumber);
     if (!Number.isInteger(floor) || floor < 1 || floor > 6) {
@@ -206,5 +249,7 @@ module.exports = {
     saveFloorSettings,
     saveGeneralSettings,
     saveLight,
+    formatSceneLine,
+    saveSceneButton,
     copyFloorImage,
 };

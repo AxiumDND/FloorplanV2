@@ -1,4 +1,5 @@
 import { addLightToCurrentFloor } from './lightManagement.js';
+import { addSceneButtonToCurrentFloor } from './sceneManagement.js';
 import { showConnectionStatus } from './connectionStatus.js';
 import { getCurrentFloor, renderFloors, setFloorBackground, updateFloorNameInputs } from './floorManagement.js';
 
@@ -9,6 +10,10 @@ export function addEventListeners() {
 
     document.getElementById('add-light-btn').addEventListener('click', () => {
         addLightToCurrentFloor();
+    });
+
+    document.getElementById('add-scene-btn').addEventListener('click', () => {
+        addSceneButtonToCurrentFloor();
     });
 
     document.getElementById('header-minimise-btn').addEventListener('click', () => {
@@ -90,6 +95,9 @@ function setLightsLocked(locked) {
     isLocked = locked;
     document.body.dataset.lightsLocked = locked ? 'true' : 'false';
     document.getElementById('lockButton').textContent = locked ? 'Unlock' : 'Lock';
+    document.querySelectorAll('.scene-button').forEach((button) => {
+        button.classList.toggle('locked', locked);
+    });
     document.querySelectorAll('.light').forEach((light) => {
         light.classList.toggle('locked', locked);
     });

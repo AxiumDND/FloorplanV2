@@ -15,6 +15,7 @@ const {
     saveFloorSettings,
     saveGeneralSettings,
     saveLight,
+    saveSceneButton,
     copyFloorImage,
 } = require('./src/Scripts/mainFunctions');
 
@@ -113,6 +114,7 @@ function registerIpc() {
     handle('getConnectionStatus', () => getConnectionStatus());
     handle('reconnect', () => connectFromSettings());
     handle('saveLight', (light) => saveLight(light));
+    handle('saveSceneButton', (button) => saveSceneButton(button));
     handle('copyFloorImage', (floorNumber, sourcePath) => copyFloorImage(floorNumber, sourcePath));
     handle('sendCommand', (command) => {
         sendCommand(command);

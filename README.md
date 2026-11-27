@@ -40,4 +40,14 @@ Run the connection tests with `npm test`.
 - Over TCP the app also sends `$EVTOUT,1;` after connecting so output events (`!CHANFADE`, `!CHANSTOP`) keep lights in step with other controllers. HTTP carries no events.
 - Only documented gateway commands are used (`docs/gateway-interface.md` Channel API, vol 2 events and live levels). The channel logic is in `src/Modules/lightChannel.js`.
 
+## Scene buttons
+
+A scene button triggers one eDIN+ scene.
+
+- **Add**: click the pencil icon (bottom edit bar) then **Add Scene Button**. A blue "New Scene" button appears on the current floor, grey with a dashed edge because it has no scene yet.
+- **Edit**: click **Unlock**, drag the button into place, then double-click it to set its **Name** and **Scene number** (1-99999, the `<scn-num>` shown in the eDIN+ configuration) and click **Save**. Dragging and edits are saved to `userData/settings.csv` as `$Scenebutton;ID;floor,N,x%,y%,name,scene;`.
+- **Trigger**: click **Lock**, then click the button. It sends `$SCNRECALL,<scene>;` (documented in `docs/gateway-interface.md` 6.1.1) through the existing connection, followed by `?SCN,<scene>;` so the button shows the real state: yellow when the scene is active.
+- Hovering a button also queries `?SCN,<scene>;`. Replies (`!SCN`, and the `!SCNSTATE` event) arrive as `tcp-message`. Over TCP the app sends `$EVTSCN,1;` after connecting so the button follows scenes recalled from elsewhere; HTTP carries no events.
+- A scene that does not exist on the system is acknowledged but does nothing (gateway behaviour), so the button stays inactive. The scene logic is in `src/Modules/sceneButton.js`.
+
 A packaged build keeps its data in the Electron user-data folder under `floorplan-data`, separate from this working copy.
