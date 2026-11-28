@@ -1,20 +1,25 @@
-const { app, BrowserWindow, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const winston = require('winston');
 const {
     setDataDir,
-    setTcpMessageHandler,
-    settingsPath,
-    ensureSettingsFile,
-    setIpAddress,
-    sendTcpCommand,
-    readFile,
+    setSecretStore,
+    setGatewayMessageHandler,
+    setConnectionStatusHandler,
+    ensureSettings,
+    getSettings,
+    connectFromSettings,
+    getConnectionStatus,
+    sendCommand,
     saveFloorSettings,
     saveGeneralSettings,
     saveLight,
+    saveSceneButton,
+    savePageButton,
     copyFloorImage,
 } = require('./src/Scripts/mainFunctions');
+const { createElectronSecrets } = require('./src/Scripts/electronSecrets');
 
 protocol.registerSchemesAsPrivileged([
     {
@@ -103,17 +108,19 @@ function handle(channel, fn) {
 }
 
 function registerIpc() {
-    handle('initializeSettings', () => readFile(settingsPath(), 'utf8'));
+    handle('initializeSettings', () => getSettings());
     handle('saveFloorSettings', (numFloors, floorNames) => saveFloorSettings(numFloors, floorNames));
-    handle('saveGeneralSettings', (ip, username, password) => saveGeneralSettings(ip, username, password));
+    handle('saveGeneralSettings', (ip, username, password, connectionType, clearPassword) =>
+        saveGeneralSettings(ip, username, password, connectionType, clearPassword)
+    );
+    handle('getConnectionStatus', () => getConnectionStatus());
+    handle('reconnect', () => connectFromSettings());
     handle('saveLight', (light) => saveLight(light));
+    handle('saveSceneButton', (button) => saveSceneButton(button));
+    handle('savePageButton', (button) => savePageButton(button));
     handle('copyFloorImage', (floorNumber, sourcePath) => copyFloorImage(floorNumber, sourcePath));
-    handle('setIpAddress', (ip) => {
-        setIpAddress(ip);
-        return ip;
-    });
-    handle('sendTcpCommand', (command) => {
-        sendTcpCommand(command);
+    handle('sendCommand', (command) => {
+        sendCommand(command);
         return command;
     });
 }
@@ -122,16 +129,27 @@ app.whenReady().then(() => {
     dataDir = getDataDir();
     setDataDir(dataDir);
     fs.mkdirSync(dataDir, { recursive: true });
-    ensureSettingsFile(path.join(__dirname, 'userData', 'settings.example.csv'));
+    setSecretStore(createElectronSecrets(safeStorage));
     configureLogging();
+    try {
+        ensureSettings();
+    } catch (error) {
+        winston.error(`settings: ${error.message}`);
+    }
     registerFloorImageProtocol();
-    setTcpMessageHandler((message) => {
+    setGatewayMessageHandler((message) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('tcp-message', message);
         }
     });
+    setConnectionStatusHandler((status) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('connection-status', status);
+        }
+    });
     registerIpc();
     createWindow();
+    connectFromSettings().catch((error) => winston.error(`connect: ${error.message}`));
 });
 
 app.on('window-all-closed', () => {

@@ -1,7 +1,10 @@
 import { initializeFloors } from '../Modules/floorManagement.js';
-import { initializeLights, bindLightEditor } from '../Modules/lightManagement.js';
+import { initializeLights, bindLightEditor, bindChannelFeedback } from '../Modules/lightManagement.js';
+import { initializeSceneButtons, bindSceneEditor, bindSceneFeedback } from '../Modules/sceneManagement.js';
+import { initializePageButtons, bindPageEditor } from '../Modules/pageManagement.js';
 import { addEventListeners } from '../Modules/eventListeners.js';
 import { populateSettingsForm } from '../Modules/settingsManagement.js';
+import { showConnectionStatus } from '../Modules/connectionStatus.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -13,12 +16,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         const settingsData = result.data;
         initializeFloors(settingsData);
         initializeLights(settingsData);
-        const { ipAddress } = populateSettingsForm(settingsData);
+        initializeSceneButtons(settingsData);
+        initializePageButtons(settingsData);
+        populateSettingsForm(settingsData);
         addEventListeners();
         bindLightEditor();
+        bindChannelFeedback();
+        bindSceneEditor();
+        bindSceneFeedback();
+        bindPageEditor();
 
-        if (ipAddress) {
-            window.myAPI.setIpAddress(ipAddress);
+        window.myAPI.onConnectionStatus(showConnectionStatus);
+        const status = await window.myAPI.getConnectionStatus();
+        if (status.success) {
+            showConnectionStatus(status.data);
         }
 
         window.myAPI.onTcpMessage((message) => {
@@ -26,5 +37,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     } catch (error) {
         console.error('Error initializing application:', error);
+        showConnectionStatus({ state: 'error', message: error.message });
     }
 });

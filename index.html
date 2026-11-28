@@ -10,11 +10,14 @@
   <link rel="stylesheet" href="src/styles/settings.css">
   <link rel="stylesheet" href="src/styles/footer.css">
   <link rel="stylesheet" href="src/styles/Light-buttons.css">
+  <link rel="stylesheet" href="src/styles/scene-buttons.css">
+  <link rel="stylesheet" href="src/styles/page-buttons.css">
 </head>
 <body>
   <!-- Header content -->
   <div id="header-bar" class="header-bar-visible">
     <div id="floor-buttons-container"></div>
+    <span id="connection-indicator" class="connection-indicator state-disconnected" title="Not connected"></span>
     <button id="open-settings-btn">
       <img src="assets/cog.png" alt="Settings" id="open-settings-btn-img" />
     </button>
@@ -43,6 +46,8 @@
   <div id="footer-bar" class="footer-bar-hidden">
     <button class="footer-bar-btn" id="load-image-btn" type="button">Load image</button>
     <button class="footer-bar-btn" id="add-light-btn" type="button">Add Light</button>
+    <button class="footer-bar-btn" id="add-scene-btn" type="button">Add Scene Button</button>
+    <button class="footer-bar-btn" id="add-page-btn" type="button">Add Page Button</button>
     <button id="lockButton" class="footer-bar-btn" type="button">Unlock</button>
   </div>
 
@@ -52,9 +57,17 @@
       <img src="assets/close.png" alt="Close" id="close-settings-btn-img" />
     </button>
     <h3>Settings</h3>
+    Connection type:
+    <select id="connection-type">
+      <option value="http" selected>HTTP (default)</option>
+      <option value="tcp">TCP (port 26)</option>
+    </select>
     IP Address: <input type="text" id="ip-address" />
-    Username: <input type="text" id="username" />
-    Password: <input type="password" id="password" />
+    Username: <input type="text" id="username" autocomplete="off" />
+    Password: <input type="password" id="password" autocomplete="off" />
+    <label class="password-clear"><input type="checkbox" id="clear-password" /> Remove saved password</label>
+    <div id="password-storage-note" class="password-storage-note" role="alert" hidden></div>
+    <div id="connection-status-text" class="connection-status-text" role="status"></div>
     Number of Floors: 
     <select id="number-of-Floors">
       <option value="1">1</option>
@@ -68,7 +81,7 @@
     <div id="floor-names-container"></div>
     <!-- Save button -->
     <button id="save-floor-names-btn">Save Floor Names</button>
-    <button id="saveSettingsButton">Save Settings</button>
+    <button id="saveSettingsButton">Save Settings and Connect</button>
   </div>
   
   <!-- Light Edit Menu -->
@@ -82,6 +95,26 @@
     <label for="edit-light-channel">Channel:</label>
     <input type="text" id="edit-light-channel" />
     <button id="save-light-button">Save</button>
+  </div>
+
+  <!-- Scene Button Edit Menu -->
+  <div id="sceneeditmenu" class="edit-menu hidden">
+    <label for="edit-scene-name">Name:</label>
+    <input type="text" id="edit-scene-name" />
+    <label for="edit-scene-number">Scene number:</label>
+    <input type="text" id="edit-scene-number" inputmode="numeric" />
+    <div id="edit-scene-error" class="edit-menu-error" role="alert"></div>
+    <button id="save-scene-button">Save</button>
+  </div>
+
+  <!-- Page Button Edit Menu -->
+  <div id="pageeditmenu" class="edit-menu hidden">
+    <label for="edit-page-name">Name:</label>
+    <input type="text" id="edit-page-name" />
+    <label for="edit-page-target">Opens page:</label>
+    <select id="edit-page-target"></select>
+    <div id="edit-page-error" class="edit-menu-error" role="alert"></div>
+    <button id="save-page-button">Save</button>
   </div>
 
   <script type="module" src="src/Scripts/renderer.js"></script>

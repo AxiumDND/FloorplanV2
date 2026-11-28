@@ -1,5 +1,16 @@
 import { loadLightData } from './settingsManagement.js';
 import { getCurrentFloor } from './floorManagement.js';
+import {
+    ENABLE_OUTPUT_EVENTS,
+    channelAddress,
+    describeChannel,
+    fadeCommand,
+    levelQuery,
+    levelToPercent,
+    parseChannelMessage,
+    percentToLevel,
+    reportMatchesLight,
+} from './lightChannel.js';
 
 let editingLight = null;
 
@@ -54,10 +65,11 @@ export function bindLightEditor() {
         editingLight.dataset.module = fieldValue('edit-light-module', '0');
         editingLight.dataset.deviceId = fieldValue('edit-light-device-id', '0');
         editingLight.dataset.channel = fieldValue('edit-light-channel', '0');
-        editingLight.title = editingLight.dataset.name;
+        resetLightLevel(editingLight);
 
         const saved = await persistLight(editingLight);
         if (saved) {
+            queryLightLevel(editingLight);
             document.getElementById('lighteditmenu').classList.add('hidden');
             editingLight = null;
         }
@@ -71,6 +83,144 @@ export function bindLightEditor() {
     });
 }
 
+export function bindChannelFeedback() {
+    document.addEventListener('tcp-message', (event) => {
+        applyChannelReport(parseChannelMessage(event.detail));
+    });
+
+    let wasConnected = false;
+    window.myAPI.onConnectionStatus((status) => {
+        const connected = status.state === 'connected';
+        // Events only reach raw TCP sessions; HTTP lights update from the hover query and their own commands.
+        if (connected && !wasConnected && status.type === 'tcp') {
+            window.myAPI.sendCommand(ENABLE_OUTPUT_EVENTS);
+        }
+        wasConnected = connected;
+    });
+}
+
+function applyChannelReport(report) {
+    if (!report) {
+        return;
+    }
+    document.querySelectorAll('.light').forEach((light) => {
+        if (!reportMatchesLight(light.dataset, report)) {
+            return;
+        }
+        if (report.type === 'level') {
+            setLightLevel(light, report.level);
+        } else if (report.type === 'status') {
+            light.classList.toggle('channel-error', report.status !== 0);
+            refreshChannelDisplay(light);
+        } else if (report.type === 'stopped') {
+            queryLightLevel(light);
+        }
+    });
+}
+
+function queryLightLevel(light) {
+    const command = levelQuery(light.dataset);
+    if (command) {
+        window.myAPI.sendCommand(command);
+    }
+}
+
+function resetLightLevel(light) {
+    delete light.dataset.level;
+    delete light.dataset.lastLevel;
+    light.classList.remove('on', 'channel-error');
+    light.style.removeProperty('--level');
+    const menu = light.querySelector('.LightHoverMenu');
+    menu.querySelector('.light-level-slider').value = '0';
+    menu.querySelector('.light-level-value').textContent = '0%';
+    menu.querySelector('.light-power-toggle').checked = false;
+    refreshChannelDisplay(light);
+}
+
+function setLightLevel(light, level) {
+    light.dataset.level = String(level);
+    if (level > 0) {
+        light.dataset.lastLevel = String(level);
+    }
+    light.classList.toggle('on', level > 0);
+    light.style.setProperty('--level', String(level / 255));
+
+    const menu = light.querySelector('.LightHoverMenu');
+    if (menu) {
+        const percent = levelToPercent(level);
+        menu.querySelector('.light-level-slider').value = String(percent);
+        menu.querySelector('.light-level-value').textContent = `${percent}%`;
+        menu.querySelector('.light-power-toggle').checked = level > 0;
+    }
+    refreshChannelDisplay(light);
+}
+
+function sendLightLevel(light, level) {
+    const command = fadeCommand(light.dataset, level);
+    if (!command) {
+        return;
+    }
+    window.myAPI.sendCommand(command);
+    setLightLevel(light, level);
+}
+
+function refreshChannelDisplay(light) {
+    const assigned = channelAddress(light.dataset) !== null;
+    light.classList.toggle('unassigned', !assigned);
+    light.classList.toggle('channel', assigned);
+    light.title = lightTitle(light);
+
+    const menu = light.querySelector('.LightHoverMenu');
+    if (menu) {
+        menu.querySelector('.light-menu-name').textContent = light.dataset.name;
+        menu.querySelector('.light-menu-channel').textContent = describeChannel(light.dataset);
+        menu.querySelectorAll('input').forEach((input) => {
+            input.disabled = !assigned;
+        });
+    }
+}
+
+function lightTitle(light) {
+    const parts = [light.dataset.name, describeChannel(light.dataset)];
+    if (light.dataset.level !== undefined && channelAddress(light.dataset)) {
+        parts.push(`${levelToPercent(Number(light.dataset.level))}%`);
+    }
+    if (light.classList.contains('channel-error')) {
+        parts.push('Channel reports a fault');
+    }
+    return parts.join(' - ');
+}
+
+function buildLightMenu(light) {
+    const menu = document.createElement('div');
+    menu.className = 'LightHoverMenu';
+    menu.innerHTML = `
+        <strong class="light-menu-name"></strong>
+        <div class="light-menu-channel"></div>
+        <label class="switch">
+            <input type="checkbox" class="light-power-toggle" />
+            <span class="slider"></span>
+        </label>
+        <input type="range" class="light-level-slider" min="0" max="100" step="1" value="0" />
+        <span class="light-level-value">0%</span>
+    `;
+
+    const slider = menu.querySelector('.light-level-slider');
+    const toggle = menu.querySelector('.light-power-toggle');
+
+    slider.addEventListener('input', () => {
+        menu.querySelector('.light-level-value').textContent = `${slider.value}%`;
+    });
+    slider.addEventListener('change', () => {
+        sendLightLevel(light, percentToLevel(slider.value));
+    });
+    toggle.addEventListener('change', () => {
+        const restore = Number(light.dataset.lastLevel) || percentToLevel(100);
+        sendLightLevel(light, toggle.checked ? restore : 0);
+    });
+    return menu;
+}
+
 function createLightElement(light) {
     const lightElement = document.createElement('div');
     lightElement.className = 'light locked';
@@ -82,10 +232,11 @@ function createLightElement(light) {
     lightElement.dataset.module = light.module;
     lightElement.dataset.channel = light.channel;
     lightElement.dataset.deviceId = light.deviceId;
-    lightElement.title = light.name;
 
+    lightElement.appendChild(buildLightMenu(lightElement));
+    refreshChannelDisplay(lightElement);
     if (light.isOn) {
-        lightElement.classList.add('on');
+        setLightLevel(lightElement, 255);
     }
 
     return lightElement;
@@ -93,7 +244,7 @@ function createLightElement(light) {
 
 function attachLightInteractions(light) {
     light.addEventListener('mousedown', (event) => {
-        if (event.button !== 0 || light.classList.contains('locked')) {
+        if (event.button !== 0 || light.classList.contains('locked') || event.target.closest('.LightHoverMenu')) {
             return;
         }
 
@@ -114,13 +265,15 @@ function attachLightInteractions(light) {
         }, { once: true });
     });
 
-    light.addEventListener('mouseover', () => {
-        const { module, deviceId, channel } = light.dataset;
-        window.myAPI.sendTcpCommand(`?CHANLEVELX,${module},${deviceId},${channel};`);
+    light.addEventListener('mouseenter', () => {
+        queryLightLevel(light);
     });
 
     light.addEventListener('dblclick', (event) => {
         event.stopPropagation();
+        if (event.target.closest('.LightHoverMenu')) {
+            return;
+        }
         openLightEditor(light);
     });
 }

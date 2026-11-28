@@ -1,175 +1,133 @@
-const net = require('net');
 const fs = require('fs');
 const path = require('path');
 
-const TCP_PORT = 26;
+const { createGatewayConnection } = require('./gatewayConnection');
+const { createSettingsStore, SECRET_ERROR } = require('./settingsStore');
 
 let dataDir = null;
-let client = null;
-let ipAddress = '';
-let onTcpMessage = () => {};
+let secrets = null;
+let settingsStore = null;
+let storeError = null;
+let connectionProblem = null;
+let onGatewayMessage = () => {};
+let onConnectionStatus = () => {};
+
+const connection = createGatewayConnection({
+    onMessage: (message) => onGatewayMessage(message),
+    onStatus: (status) => {
+        // Credentials never go to the log; only the state and target are written.
+        console.info(`Connection ${status.state} (${status.type} ${status.host})${status.message ? `: ${status.message}` : ''}`);
+        onConnectionStatus(status);
+    },
+    log: (line) => console.info(line),
+});
 
 function setDataDir(dir) {
     dataDir = dir;
+    settingsStore = null;
+    storeError = null;
+    connectionProblem = null;
 }
 
-function setTcpMessageHandler(handler) {
-    onTcpMessage = handler;
+function setGatewayMessageHandler(handler) {
+    onGatewayMessage = handler;
 }
 
-function settingsPath() {
+function setConnectionStatusHandler(handler) {
+    onConnectionStatus = handler;
+}
+
+const unavailableSecrets = {
+    isAvailable: () => false,
+    unavailableReason: () => '',
+    encrypt: () => {
+        throw new Error('Secure password storage is not available.');
+    },
+    decrypt: () => {
+        throw new Error('Secure password storage is not available.');
+    },
+};
+
+function setSecretStore(store) {
+    secrets = store;
+    settingsStore = null;
+    storeError = null;
+}
+
+function getStore() {
     if (!dataDir) {
         throw new Error('Data directory is not set');
     }
-    return path.join(dataDir, 'settings.csv');
-}
-
-function ensureSettingsFile(examplePath) {
-    const filePath = settingsPath();
-    fs.mkdirSync(dataDir, { recursive: true });
-    if (!fs.existsSync(filePath)) {
-        fs.copyFileSync(examplePath, filePath);
+    if (storeError) {
+        throw storeError;
     }
-    return filePath;
-}
-
-function setupTcpClient() {
-    if (!ipAddress) {
-        return;
-    }
-
-    client = new net.Socket();
-    client.connect(TCP_PORT, ipAddress, () => {
-        console.info(`Connected to the lighting system at ${ipAddress}:${TCP_PORT}`);
-    });
-
-    client.on('data', (data) => {
-        const message = data.toString();
-        console.info(`Received: ${message}`);
-        onTcpMessage(message);
-    });
-
-    client.on('close', () => {
-        console.info('Connection to lighting system closed');
-    });
-
-    client.on('error', (err) => {
-        console.error(`TCP client error: ${err.message}`);
-    });
-}
-
-function setIpAddress(ip) {
-    ipAddress = (ip || '').trim();
-    if (client) {
-        client.destroy();
-        client = null;
-    }
-    if (ipAddress) {
-        setupTcpClient();
-    }
-}
-
-function sendTcpCommand(command) {
-    if (!client || !client.writable) {
-        return false;
-    }
-    client.write(command);
-    return true;
-}
-
-function readFile(filePath, encoding = 'utf8') {
-    return fs.promises.readFile(filePath, encoding);
-}
-
-function writeFile(filePath, data, encoding = 'utf8') {
-    return fs.promises.writeFile(filePath, data, encoding);
-}
-
-async function saveGeneralSettings(ip, username, password) {
-    const filePath = settingsPath();
-    let settingsData = await readFile(filePath, 'utf8');
-    const fields = { ipAddress: ip, userName: username, password: password };
-    for (const [key, value] of Object.entries(fields)) {
-        const safeValue = String(value ?? '').replace(/[;\r\n]/g, '');
-        const regex = new RegExp(`\\$${key},([^;]*);`);
-        const line = `$${key},${safeValue};`;
-        if (regex.test(settingsData)) {
-            settingsData = settingsData.replace(regex, line);
-        } else {
-            settingsData += `\n${line}`;
+    if (!settingsStore) {
+        const created = createSettingsStore({ dir: dataDir, secrets: secrets || unavailableSecrets });
+        try {
+            created.load();
+        } catch (error) {
+            storeError = error;
+            throw error;
         }
+        settingsStore = created;
     }
-    await writeFile(filePath, settingsData, 'utf8');
+    return settingsStore;
+}
+
+function ensureSettings() {
+    return getStore().view();
+}
+
+function getSettings() {
+    return getStore().view();
+}
+
+async function connectFromSettings() {
+    let settings;
+    try {
+        settings = getStore().getConnectionSettings();
+    } catch (error) {
+        if (error.code !== SECRET_ERROR) {
+            throw error;
+        }
+        connection.disconnect();
+        connectionProblem = { state: 'error', type: 'http', host: '', message: error.message };
+        onConnectionStatus(connectionProblem);
+        return connectionProblem;
+    }
+    connectionProblem = null;
+    connection.connect(settings);
+    return connection.getStatus();
+}
+
+function sendCommand(command) {
+    return connection.send(command);
+}
+
+function getConnectionStatus() {
+    return connectionProblem ? { ...connectionProblem } : connection.getStatus();
+}
+
+async function saveGeneralSettings(ip, username, password, connectionType, clearPassword) {
+    getStore().saveGeneral(ip, username, password, connectionType, clearPassword);
+    await connectFromSettings();
+    return getStore().view();
 }
 
 async function saveFloorSettings(numFloors, floorNames) {
-    const filePath = settingsPath();
-    let settingsData = await readFile(filePath, 'utf8');
-    const floorCount = Number(numFloors);
-    if (!Number.isInteger(floorCount) || floorCount < 1 || floorCount > 6) {
-        throw new Error('Number of floors must be from 1 to 6');
-    }
-
-    if (/\$Floornumber,\d+;/.test(settingsData)) {
-        settingsData = settingsData.replace(/\$Floornumber,\d+;/, `$Floornumber,${floorCount};`);
-    } else {
-        settingsData += `\n$Floornumber,${floorCount};`;
-    }
-
-    floorNames.slice(0, floorCount).forEach((name, index) => {
-        const safeName = String(name || `Floor ${index + 1}`).replace(/[;\r\n]/g, '').trim() || `Floor ${index + 1}`;
-        const regex = new RegExp(`\\$Floorinfo${index + 1},([^;]*);`);
-        const line = `$Floorinfo${index + 1},${safeName};`;
-        if (regex.test(settingsData)) {
-            settingsData = settingsData.replace(regex, line);
-        } else {
-            settingsData += `\n${line}`;
-        }
-    });
-
-    await writeFile(filePath, settingsData, 'utf8');
-}
-
-function formatLightLine(light) {
-    const id = Number(light.id);
-    const floor = Number(light.floor);
-    const x = Number(light.x);
-    const y = Number(light.y);
-    if (!Number.isInteger(id) || id < 1) {
-        throw new Error('Light id must be a positive number');
-    }
-    if (!Number.isInteger(floor) || floor < 1 || floor > 6) {
-        throw new Error('Light floor must be from 1 to 6');
-    }
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-        throw new Error('Light position is not a number');
-    }
-
-    const clean = (value, fallback) => String(value ?? fallback).replace(/[;,\r\n]/g, '').trim() || fallback;
-    const name = clean(light.name, 'New Light');
-    const module = clean(light.module, '0');
-    const channel = clean(light.channel, '0');
-    const deviceId = clean(light.deviceId, '0');
-
-    return `$Lightsetting;${id};floor,${floor},${x.toFixed(4)}%,${y.toFixed(4)}%,${name},${module},${channel},${deviceId};`;
+    getStore().saveFloors(numFloors, floorNames);
 }
 
 async function saveLight(light) {
-    const filePath = settingsPath();
-    let settingsData = await readFile(filePath, 'utf8');
-    const line = formatLightLine(light);
-    const regex = new RegExp(`\\$Lightsetting;${Number(light.id)};floor,[^;]*;`);
+    getStore().saveLight(light);
+}
 
-    if (regex.test(settingsData)) {
-        settingsData = settingsData.replace(regex, line);
-    } else {
-        if (!settingsData.endsWith('\n')) {
-            settingsData += '\n';
-        }
-        settingsData += `${line}\n`;
-    }
+async function saveSceneButton(button) {
+    getStore().saveScene(button);
+}
 
-    await writeFile(filePath, settingsData, 'utf8');
+async function savePageButton(button) {
+    getStore().savePage(button);
 }
 
 function copyFloorImage(floorNumber, sourcePath) {
@@ -188,14 +146,18 @@ function copyFloorImage(floorNumber, sourcePath) {
 
 module.exports = {
     setDataDir,
-    setTcpMessageHandler,
-    settingsPath,
-    ensureSettingsFile,
-    setIpAddress,
-    sendTcpCommand,
-    readFile,
+    setSecretStore,
+    setGatewayMessageHandler,
+    setConnectionStatusHandler,
+    ensureSettings,
+    getSettings,
+    connectFromSettings,
+    getConnectionStatus,
+    sendCommand,
     saveFloorSettings,
     saveGeneralSettings,
     saveLight,
+    saveSceneButton,
+    savePageButton,
     copyFloorImage,
 };

@@ -1,0 +1,54 @@
+/* Page Button: switches the panel to another page; it sends nothing to the gateway */
+.page-button {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  max-width: 160px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  border: 2px solid #1e8a5a;
+  background-color: rgba(30, 138, 90, 0.55);
+  color: white;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s;
+}
+
+.page-button.locked:hover {
+  background-color: rgba(30, 138, 90, 0.8);
+}
+
+.page-button.locked:active {
+  transform: translateY(1px);
+}
+
+.page-button:not(.locked) {
+  cursor: move;
+}
+
+/* Not pointing at an existing page yet */
+.page-button.unassigned {
+  background-color: rgba(160, 160, 160, 0.5);
+  border: 2px dashed #666;
+}
+
+.page-button.unassigned.locked {
+  cursor: default;
+}
+
+.page-button-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-menu select {
+  width: calc(100% - 12px);
+  margin-bottom: 10px;
+  border-radius: 4px;
+}

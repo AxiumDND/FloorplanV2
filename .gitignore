@@ -6,6 +6,5 @@ dist/
 .claude/
 combined_All.txt
 
-# Site data stays on the machine. Commit the example settings only.
+# Site data (settings, floor images) stays on the machine.
 userData/*
-!userData/settings.example.csv

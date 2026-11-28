@@ -1,4 +1,8 @@
 import { addLightToCurrentFloor } from './lightManagement.js';
+import { addSceneButtonToCurrentFloor } from './sceneManagement.js';
+import { addPageButtonToCurrentFloor, refreshPageButtons } from './pageManagement.js';
+import { showConnectionStatus } from './connectionStatus.js';
+import { populateSettingsForm } from './settingsManagement.js';
 import { getCurrentFloor, renderFloors, setFloorBackground, updateFloorNameInputs } from './floorManagement.js';
 
 let isLocked = true;
@@ -8,6 +12,14 @@ export function addEventListeners() {
 
     document.getElementById('add-light-btn').addEventListener('click', () => {
         addLightToCurrentFloor();
+    });
+
+    document.getElementById('add-scene-btn').addEventListener('click', () => {
+        addSceneButtonToCurrentFloor();
+    });
+
+    document.getElementById('add-page-btn').addEventListener('click', () => {
+        addPageButtonToCurrentFloor();
     });
 
     document.getElementById('header-minimise-btn').addEventListener('click', () => {
@@ -27,18 +39,26 @@ export function addEventListeners() {
     });
 
     document.getElementById('saveSettingsButton').addEventListener('click', async () => {
+        const connectionType = document.getElementById('connection-type').value;
         const ip = document.getElementById('ip-address').value.trim();
         const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const result = await window.myAPI.saveGeneralSettings(ip, username, password);
+        const passwordInput = document.getElementById('password');
+        const clearPassword = document.getElementById('clear-password');
+        const result = await window.myAPI.saveGeneralSettings(
+            ip,
+            username,
+            passwordInput.value,
+            connectionType,
+            clearPassword.checked
+        );
 
         if (!result.success) {
             console.error('Failed to save general settings:', result.error);
+            showConnectionStatus({ state: 'error', message: result.error });
             return;
         }
-        if (ip) {
-            window.myAPI.setIpAddress(ip);
-        }
+        passwordInput.value = '';
+        populateSettingsForm(result.data);
     });
 
     document.getElementById('number-of-Floors').addEventListener('change', (event) => {
@@ -60,6 +80,7 @@ export function addEventListeners() {
             return;
         }
         renderFloors(numFloors, floorNames);
+        refreshPageButtons();
     });
 
     document.getElementById('load-image-btn').addEventListener('click', () => {
@@ -91,6 +112,12 @@ function setLightsLocked(locked) {
     isLocked = locked;
     document.body.dataset.lightsLocked = locked ? 'true' : 'false';
     document.getElementById('lockButton').textContent = locked ? 'Unlock' : 'Lock';
+    document.querySelectorAll('.scene-button').forEach((button) => {
+        button.classList.toggle('locked', locked);
+    });
+    document.querySelectorAll('.page-button').forEach((button) => {
+        button.classList.toggle('locked', locked);
+    });
     document.querySelectorAll('.light').forEach((light) => {
         light.classList.toggle('locked', locked);
     });
