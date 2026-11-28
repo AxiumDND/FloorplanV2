@@ -1,6 +1,6 @@
 {
   "name": "floorplan",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "Floorplan for placing lights on floor images and controlling an eDin+ system.",
   "main": "main.js",
   "scripts": {
@@ -33,7 +33,17 @@
       "!**/*.zip"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "Floorplan-Setup-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "maintainer": "AxiumDND <noreply@github.com>",
+      "artifactName": "Floorplan-${version}.${ext}"
     }
   }
 }
